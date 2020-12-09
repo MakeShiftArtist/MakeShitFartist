@@ -7,6 +7,8 @@ from definitions import *
 import re
 
 file = "ifunnydiscord.sqlite"
+IMONKE_GUILD_ID = 646164479863947266
+POINT_COUNT_REGEX = "^((\[|\()\d+(\]|\))(\ +)?)+"
 
 data = Common_info.trello
 trello_client = Trello.Info.client(data.api_key, data.api_secret, data.token)
@@ -61,16 +63,13 @@ class misc(commands.Cog, name='Misc'):
             return
         return await ctx.send(error)
 
-
-
-
     @commands.command(name='Trello', brief="Creates a report for iMonke",
     help= "Sends a report to [iMonke's Trello board](https://trello.com/b/6VnXOnCr/imonke-development)\n> Use `-trello` for a list of labels and more info\n> You must be in iMonke to use this command.",
     aliases=['report', 'bug', 'feature', 'feat'], usage='trello <labels> [title]`\n> `<description>')
     @commands.guild_only()
     @commands.cooldown(4, 20.0, commands.BucketType.member)
     async def trello_add_card(self, ctx, *, report:str=None):
-        if ctx.guild.id != 646164479863947266:
+        if ctx.guild.id != IMONKE_GUILD_ID:
             return await ctx.send("You must be in iMonke to use this command.")
         if report is None:
             embed = Embeds.trello_embed(base)
@@ -109,6 +108,57 @@ class misc(commands.Cog, name='Misc'):
         except:
             return await ctx.send(embed=embed)
 
+    @commands.command(name = 'groom', brief = 'List the cards currently available to GROOM')
+    @commands.guild_only()
+    async def trello_get_groom(self, ctx, size: str = None):
+        if ctx.guild.id != IMONKE_GUILD_ID:
+            await ctx.send("You must be in iMonke to use this command")
+            return
+
+        message = await ctx.send("Fetching cards with label `GROOM`")
+        groomable = [
+            card
+            for list in base.board.list_lists()
+            for card in list.list_cards()
+            if card.labels and
+            "GROOM" in [
+                label.name for label in card.labels
+            ]
+        ]
+
+        if size:
+            groomable = groomable[:size]
+
+        if not groomable:
+            await message.edit(content = "There are no cards with label `GROOM`")
+            return
+
+        await message.edit(content = f"Got {len(groomable)} cards, sending embeds")
+
+        for card in groomable:
+            label_names = sorted([
+                f"`[{label.name}]`"
+                for label in card.labels
+                if label.name != "GROOM"
+            ])
+
+            embed = discord.Embed(
+                title = re.sub(POINT_COUNT_REGEX, "", card.name),
+                color = Common_info.blue,
+            ).add_field(
+                name = "Labels",
+                value = " ".join(label_names),
+                inline = False,
+            ).add_field(
+                name = "Description",
+                value = card.description,
+                inline = False,
+            )
+
+            await ctx.send(embed = embed)
+
+        await message.delete()
+
     @trello_add_card.error
     async def trello_add_card_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
@@ -127,7 +177,6 @@ class misc(commands.Cog, name='Misc'):
             channel = await self.bot.fetch_channel(768271364271898624)
             await channel.send(embed=log_embed)
         return await ctx.send(embed=embed)
-
 
     @commands.command(name='Ping',brief='Checks bot latency', usage='Ping',
     help="Checks the bot's latency to the server in milliseconds")
