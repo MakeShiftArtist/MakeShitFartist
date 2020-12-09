@@ -81,7 +81,6 @@ class Trello:
             self.title = re.sub(strip_pattern, "", message)
 
     class Base:
-
         def __init__(self, client, board_name, list_name):
             self.client = client
             self.board = Trello.Info.get_board(client, board_name)
@@ -89,20 +88,19 @@ class Trello:
             self.all_cards = self.list.list_cards()
             self.labels = Trello.Info.get_labels(self.board)
 
-        def get_boards(client):
-            return client.list_boards()
+        def get_boards(self):
+            return self.client.list_boards()
 
-        def get_lists(board):
-            return board.list_lists()
+        def get_lists(self):
+            return self.board.list_lists()
 
         def get_bugs(self):
             self.all_bugs = self.list.list_cards()
             return self.all_bugs
 
-        def add_bug(self, message=None, desc=None, labels=None):
+        def add_bug(self, message=None, desc=None, labels=[]):
             message = Trello.Card_labels(message)
-            if desc is None:
-                desc = "No description"
+            desc = desc if desc else 'No description'
 
             if labels is None:
                 labels = ['report']
