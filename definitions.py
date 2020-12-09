@@ -580,6 +580,7 @@ class Database:
         self.database = sqlite.connect(file)
         self.cursor = self.database.cursor()
         self.db = self.database
+        self.start()
 
     def get_passcode(self):
         return str(randint(100001, 999999))
@@ -614,6 +615,13 @@ class Database:
             IsMuted BOOL
             )
             """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS Autoposts (
+                MemberID INT,
+                TOTAL INT
+            )
+        """)
 
     def save(self):
         self.db.commit()
