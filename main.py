@@ -107,6 +107,7 @@ async def on_command_error(ctx, error):
         time = round(error.retry_after*100)/100
         return await ctx.send(f"Command on cooldown. Try again in {time} seconds")
     else:
+        await ctx.send(error)
         raise error
 
 

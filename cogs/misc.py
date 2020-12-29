@@ -258,8 +258,14 @@ class misc(commands.Cog, name='Misc'):
     async def pfp_c(self, ctx, member:discord.Member=None):
         if member is None:
             member = ctx.message.author
-        embed = discord.Embed(title="Avatar", color=Common_info.blue)
-        embed.set_author(name=member.display_name,icon_url=member.avatar_url)
+        embed = discord.Embed(
+            title="Avatar",
+            color=Common_info.blue
+            )
+        embed.set_author(
+            name=member.display_name,
+            icon_url=member.avatar_url
+            )
         embed.set_footer(text=f"ID: {member.id}")
         embed.set_image(url=member.avatar_url)
         return await ctx.send(embed=embed)
@@ -273,6 +279,55 @@ class misc(commands.Cog, name='Misc'):
         if log_embed is not None:
             channel = await self.bot.fetch_channel(768271364271898624)
             await channel.send(embed=log_embed)
+        return await ctx.send(embed=embed)
+
+    @commands.command(
+        name="Embed", brief="Creates a custom embed",
+        help="Creates a custom embed with a title, description and fields.",
+        usage="[title] <description>`\n> `<field title | field description>"
+        )
+    async def send_embed(self, ctx, title=None, *, desc=None):
+        try:
+            await ctx.message.delete()
+        except Exception:
+            pass
+        if title is None:
+            return await ctx.send("You need a title for an embed")
+
+        if desc is None:
+            desc = ""
+        extra = desc.split("\n")
+        try:
+            embed = discord.Embed(
+                title=title,
+                description=extra[0],
+                color=Common_info.blue
+                )
+        except Exception:
+            embed = discord.Embed(
+                title=title,
+                color=Common_info.blue
+                )
+        for field in extra[1:]:
+            data = re.split(r"((?<!\\)(\s\|\s|\s\||\|\s|\|))", field)
+            regex = re.compile(r'(\s\|\s|\s\||\|\s|\|)')
+            filtered = [i for i in data if not regex.match(i)]
+            if len(filtered) == 1:
+                embed.add_field(
+                    name="Field",
+                    value=filtered[0],
+                    inline=False
+                    )
+            else:
+                if filtered[0] == "":
+                    filtered[0] = "Field"
+                embed.add_field(
+                    name=filtered[0],
+                    value="\n".join(filtered[1:]),
+                    inline=False
+                    )
+        #embed.set_author(name=ctx.author, icon_url=ctx.author.avatar_url)
+        embed.set_footer(text=ctx.author)
         return await ctx.send(embed=embed)
 
 def setup(bot):

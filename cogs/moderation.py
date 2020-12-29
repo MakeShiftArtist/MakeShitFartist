@@ -1,4 +1,5 @@
 import discord
+import asyncio
 from discord.ext import commands
 from definitions import *
 
@@ -297,7 +298,12 @@ class moderation(commands.Cog, name='Moderation'):
         embed = discord.Embed(title=f"{count} messages deleted", color = Common_info.blue)
         embed.add_field(name="Moderator", value = f"{author.mention}\n(ID: {author.id})", inline=False)
         embed.set_footer(text=Datetime.get_full_date())
-        return await ctx.send(embed=embed)
+        message = await ctx.send(embed=embed)
+        await asyncio.sleep(5)
+        try:
+            return await message.delete()
+        except Exception:
+            return None
 
     @purge_c.error
     async def purge_c_error(self, ctx, error):
