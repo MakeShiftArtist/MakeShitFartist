@@ -461,7 +461,7 @@ class Embeds:
         embed = discord.Embed(
             title=member.display_name,
             description=full_name,
-            scolor=Common_info.blue
+            color=Common_info.blue
             )
 
         embed.add_field(
