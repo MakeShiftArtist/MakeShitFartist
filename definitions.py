@@ -484,16 +484,16 @@ class Embeds:
         except AttributeError:
             activity = None
         if activity is not None:
-            activity = str(activity.name)
+            name = str(activity.name)
             try:
                 emoji = activity.emoji
                 if emoji is not None:
-                    activity = str(emoji) + " " + activity
+                    name = str(emoji) + " " + name
             except AttributeError:
                 pass
             embed.add_field(
                 name='Activity',
-                value=activity,
+                value=name,
                 inline=False)
 
         if ctx.guild is not None:
