@@ -103,7 +103,9 @@ class misc(commands.Cog, name='Misc'):
         except:
             return await ctx.send(embed=embed)
 
-    @commands.command(name = 'groom', brief = 'List the cards currently available to GROOM')
+    @commands.command(name='Groom', brief='List the GROOM cards for iMonke',
+    help="Lists the cards currently available to GROOM for iMonke",
+    usage="groom")
     @commands.guild_only()
     async def trello_get_groom(self, ctx, size: str = None):
         if ctx.guild.id != IMONKE_GUILD_ID:
@@ -138,22 +140,31 @@ class misc(commands.Cog, name='Misc'):
                 if label.name != "GROOM"
             ])
 
+
             embed = discord.Embed(
                 title = re.sub(POINT_COUNT_REGEX, "", card.name),
                 color = Common_info.blue,
-            ).add_field(
-                name = "Labels",
-                value = " ".join(label_names),
-                inline = False,
-            ).add_field(
+            )
+            if label_names:
+                embed.add_field(
+                        name = "Labels",
+                        value = " ".join(label_names),
+                        inline = False,
+                    )
+            if card.description:
+                embed.add_field(
                 name = "Description",
                 value = card.description,
                 inline = False,
-            )
+                )
 
             await ctx.send(embed = embed)
+            await asyncio.sleep(1)
 
-        await message.delete()
+        try:
+            await message.delete()
+        except Exception:
+            return
 
     @trello_add_card.error
     async def trello_add_card_error(self, ctx, error):
