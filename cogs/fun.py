@@ -11,19 +11,114 @@ import re
 
 ClientBase = objects._mixin.ClientBase()
 
-class fun(commands.Cog, name='Fun'):
+class Fun(commands.Cog):
     '''Commands to add some fun to your server'''
     def __init__(self, bot):
         self.bot = bot
         self.insult = Insults()
+        self.names = {
+            "walk": "walkstr8t",
+            "soba": "cold..soba",
+            "ella": "ellamenope",
+            "child": "creature",
+            "cweature": "creature",
+            "kierkegaard": "creature",
+            "wife-e": "macey",
+            "wife": "macey",
+            "meika_": "meika",
+        }
+        self.friends = {
+            "defy": {
+                "message": "fuck me",
+                "reacts": ["👉", "👌"],
+                "id": 625719520127877136,
+            },
+            "walkstr8t": {
+                "message": "Imagine",
+                "reacts": [u"\U0001f5a4"],
+                "id": 456972240311943170,
+            },
+            "cesar": {
+                "message": "Shut the fuck up",
+                "reacts": ["<a:spinpikachu:796939118571421747>"],
+                "id": 691099809720958980,
+            },
+            "cold..soba": {
+                "message": "Put on the maid outfit ",
+                "reacts": [u"\U0001f52b"],
+                "id": 773690510698741760,
+            },
+            "creature": {
+                "message": "lblblbllblblllbllbllblblbl",
+                "reacts": [u"\U0000fe0f"],
+                "id": 425665226721984514,
+            },
+            "macey": {
+                "message": "*Gay screams*",
+                "reacts": [u"\U0001F3F3\uFE0F\u200D\U0001F308"],
+                "id": 756323850257563709,
+            },
+            "meika": {
+                "message": "**pisses aggressively**",
+                "reacts": ["<:doitagain:798790082009235476>"],
+                "id": 527342369729806336,
+            },
+        }
 
     @commands.Cog.listener()
     async def on_ready(self):
         print('Fun Cog loaded')
 
+    @commands.command(
+        name="friend",
+        hidden=True,
+        aliases=[
+            "walkstr8t", "walk", "defy", "cesar",
+            "ella", "ellamenope", "soba", "cold..soba",
+            "child", "creature", "cweature", "kierkegaard",
+            "macey", "wife-e", "meika", "meika_"
+            ]
+        )
+    @commands.bot_has_permissions(manage_webhooks=True)
+    async def fren_c(self, ctx):
+        name = ctx.invoked_with.lower()
+        if name in self.names:
+            name = self.names[name]
 
-    @commands.command(name='Minesweeper', brief='Sends a minesweeper game', help='Sends a game of Minesweeper using spoilers.',
-    aliases=['MS', 'Minespoiler'],usage='Minesweeper <size> <bombs>')
+        if name in self.friends:
+            webhooks = await ctx.channel.webhooks()
+
+            webhook = discord.utils.get(webhooks, name="MakeShitFartist")
+
+            if not webhook:
+                webhook = await ctx.channel.create_webhook(name="MakeShitFartist")
+
+            friend = self.friends[name]
+            user = await self.bot.fetch_user(friend["id"])
+            msg = await webhook.send(
+                friend["message"],
+                username=user.display_name,
+                avatar_url=user.avatar_url,
+                wait=True
+                )
+            try:
+                for reaction in friend["reacts"]:
+                    await msg.add_reaction(reaction)
+            except Exception as e:
+                print(e)
+    @fren_c.error
+    async def fren_c_error(self, ctx, error):
+        if isinstance(error, commands.BotMissingPermissions):
+            await ctx.send(error)
+
+
+    @commands.command(
+        name='Minesweeper',
+        brief='Sends a minesweeper game',
+        help='Sends a game of Minesweeper using spoilers.',
+        aliases=['MS', 'Minespoiler'],
+        usage='Minesweeper <size> <bombs>',
+        )
     async def minesweeper_c(self, ctx, size=8, bombs=8):
         if size < 2:
             size = 2
@@ -32,7 +127,9 @@ class fun(commands.Cog, name='Fun'):
         if bombs >= (size * size) - 1:
             bombs = (size * size) - 1
         board = draw(size, size, bombs)
-        await ctx.send(f'**Minesweeper: {size} by {size} with {bombs} total bombs.\n{board}**')
+        await ctx.send(
+            f'**Minesweeper: {size} by {size} with {bombs} total bombs.\n{board}**'
+            )
 
 
     @minesweeper_c.error
@@ -40,8 +137,10 @@ class fun(commands.Cog, name='Fun'):
         if isinstance(error, commands.BadArgument):
             return await ctx.send('That\'s not a number you baboon')
 
-    @commands.command(name='Bubblewrap',brief='Sends bubble wrap',aliases=['Pop', 'Bubble'],
-    help='This will send bubble wrap ising spoilers.\n> Pretty simple really.',usage='Bubblewrap <amount>')
+    @commands.command(name='Bubblewrap',brief='Sends bubble wrap',
+        help='This will send bubble wrap ising spoilers.\n> Pretty simple really.',
+        usage='Bubblewrap <amount>', aliases=['Pop', 'Bubble']
+        )
     async def bubblewrap_c(self, ctx, amount=5):
         if amount > 13:
             amount = 13
@@ -59,8 +158,11 @@ class fun(commands.Cog, name='Fun'):
             print(error)
 
 
-    @commands.command(name='Roll',brief='Rolls a die', usage='Roll <sides>',
-    help='Will give you a random number and whatever you input.')
+    @commands.command(
+        name='Roll',brief='Rolls a die',
+        usage='Roll <sides>',
+        help='Will give you a random number and whatever you input.'
+        )
     async def roll_c(self, ctx, sides = 6.0):
         try:
             sides = abs(sides)
@@ -78,8 +180,13 @@ class fun(commands.Cog, name='Fun'):
             return await ctx.send('Invalid die size')
 
 
-    @commands.command(name = '8ball', aliases= ['8b','Eightball'],brief='It\'s a magic 8ball.',
-    help="It's like 8ball, but sarcastic.", usage='8ball [question]')
+    @commands.command(
+        name = '8ball',
+        aliases= ['8b','Eightball'],
+        brief='It\'s a magic 8ball.',
+        help="It's like 8ball, but sarcastic.",
+        usage='8ball [question]'
+        )
     async def sarcastic_eightball(self, ctx, *, question = None):
         if question == None:
             eightballembed = discord.Embed(
@@ -107,8 +214,13 @@ class fun(commands.Cog, name='Fun'):
             return await ctx.send(embed=eightballembed)
 
 
-    @commands.command(name= 'Youtube', brief='Searches videos on youtube', aliases= ['YT', 'Search'],
-    help='This will send a link containing the search text for a YouTube video.', usage='Youtube [search]')
+    @commands.command(
+        name= 'Youtube',
+        brief='Searches videos on youtube',
+        aliases= ['YT', 'Search'],
+        help='This will send a link containing the search text for a YouTube video.',
+        usage='Youtube [search]',
+        )
     async def search_on_youtube(self, ctx, *, searchtext = None):
         if searchtext != None:
             link = 'https://www.youtube.com/results?search_query='
@@ -118,8 +230,12 @@ class fun(commands.Cog, name='Fun'):
             return await ctx.send(embed=youtubeembed)
         return await ctx.send("What the fuck do you wan't me to search?")
 
-    @commands.command(name="Insult", brief="Insults someone", usage="insult <name> <second name> ...",
-    help="Insults someone. It'll insult you if you don't tell it who.")
+    @commands.command(
+        name="Insult",
+        brief="Insults someone",
+        usage="insult <name> <second name> ...",
+        help="Insults someone. It'll insult you if you don't tell it who."
+        )
     @commands.cooldown(2, 5, type=commands.BucketType.member)
     async def insult_c(self, ctx, *, names=None):
         if names is None:
@@ -140,8 +256,6 @@ class fun(commands.Cog, name='Fun'):
         embed = discord.Embed(title="Insult:", description=insult, color = Common_info.blue)
         embed.set_footer(text=ctx.author)
         return await ctx.send(embed=embed)
-
-
 
 def setup(bot):
     bot.add_cog(fun(bot))
