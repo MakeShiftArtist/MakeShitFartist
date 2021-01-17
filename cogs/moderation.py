@@ -109,7 +109,7 @@ class MemberID(commands.Converter):
 
 
 
-class moderation(commands.Cog, name='Moderation'):
+class Moderation(commands.Cog):
     '''Commands for moderating the the server'''
 
     def __init__(self, bot):

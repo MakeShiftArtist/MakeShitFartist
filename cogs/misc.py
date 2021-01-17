@@ -18,19 +18,30 @@ with open("tokens.json") as f:
         data["trello"]["api_secret"],
         data["trello"]["token"]
         )
-base = Trello.Base(trello_client, "iMonke Development", "TRIAGE")
+
+base = Trello.Base(trello_client, "iMonke Development", "REPORTS")
 
 
-class misc(commands.Cog, name='Misc'):
+class Misc(commands.Cog):
     '''Miscellaneous commands that don't really fit in a category'''
 
     def __init__(self, bot):
         self.bot = bot
+        self.user_reacts = {
+            420: "emoji"
+        }
 
     @commands.Cog.listener()
     async def on_ready(self):
         print('Misc Cog loaded')
 
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.author.id in self.user_reacts:
+            try:
+                await message.add_reaction(self.user_reacts[message.author.id])
+            except Exception:
+                return
 
     @commands.command(hidden=True, name='IP')
     @commands.is_owner()
@@ -332,6 +343,8 @@ class misc(commands.Cog, name='Misc'):
             else:
                 if filtered[0] == "":
                     filtered[0] = "Field"
+                if filtered[1] == "":
+                    filtered[1] = "\u200B"
                 embed.add_field(
                     name=filtered[0],
                     value="\n".join(filtered[1:]),

@@ -80,7 +80,7 @@ def _connected_to_chat(data):
     print(Datetime.get_full_date(Datetime.now()))
 
 
-class ifunny(commands.Cog, name='iFunny'):
+class iFunny(commands.Cog):
     '''Commands for interacting with iFunny'''
 
     def __init__(self, bot):
@@ -316,6 +316,7 @@ class ifunny(commands.Cog, name='iFunny'):
         await message.edit(embed=embed)
         count = 0
         post_num=0
+        failed = 0
         for post in user.timeline:
             post_num+=1
             if post.is_unsmiled:
@@ -323,12 +324,23 @@ class ifunny(commands.Cog, name='iFunny'):
                     break
                 continue
             await asyncio.sleep(1)
-            post.unsmile()
-            count+=1
+            try:
+                post.unsmile()
+                count+=1
+            except:
+                failed += 1
+                continue
             if count == amount:
                 break
-        embed = discord.Embed(title=f'Finished unsmiling {count} posts from {user.nick}', color=Common_info.blue)
-        return await message.edit(embed=embed)
+        embed = discord.Embed(
+            title=f'Finished unsmiling {count} posts from {user.nick}',
+            description=f"{failed} posts had too many unsmiles \U0001f974",
+            color=Common_info.blue
+            )
+        try:
+            await message.edit(embed=embed)
+        except Exception:
+            await ctx.send(embed=embed)
 
 
 

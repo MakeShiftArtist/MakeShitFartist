@@ -32,8 +32,10 @@ async def get_prefix(bot, message):
 intents = discord.Intents.all()
 allowed_mentions = discord.AllowedMentions(everyone=False)
 client = commands.Bot(
-    command_prefix=get_prefix, case_insensitive=True,
-    intents=intents, allowed_mentions=allowed_mentions
+    command_prefix=get_prefix,
+    case_insensitive=True,
+    intents=intents,
+    allowed_mentions=allowed_mentions
     )
 client.remove_command('help')
 

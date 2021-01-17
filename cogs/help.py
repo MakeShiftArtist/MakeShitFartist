@@ -35,7 +35,7 @@ def required_perms(command:str):
         required = None
     return required
 
-class help(commands.Cog, name='Help'):
+class Help(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
