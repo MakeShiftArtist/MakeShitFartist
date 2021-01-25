@@ -13,6 +13,7 @@ class Fun(commands.Cog):
     '''Commands to add some fun to your server'''
     def __init__(self, bot):
         self.tictac = games.TicTacToe()
+        self.pokemon = PokemonHelper()
         self.bot = bot
         self.insult = Insults()
         self.names = {
@@ -160,9 +161,12 @@ class Fun(commands.Cog):
         if isinstance(error, commands.BadArgument):
             return await ctx.send('That\'s not a number you baboon')
 
-    @commands.command(name='Bubblewrap',brief='Sends bubble wrap',
+    @commands.command(
+        name='Bubblewrap',
+        brief='Sends bubble wrap',
         help='This will send bubble wrap ising spoilers.\n> Pretty simple really.',
-        usage='Bubblewrap <amount>', aliases=['Pop', 'Bubble']
+        usage='Bubblewrap <amount>',
+        aliases=['Pop', 'Bubble'],
         )
     async def bubblewrap_c(self, ctx, amount=5):
         if amount > 13:
@@ -182,9 +186,10 @@ class Fun(commands.Cog):
 
 
     @commands.command(
-        name='Roll',brief='Rolls a die',
+        name='Roll',
+        brief='Rolls a die',
         usage='Roll <sides>',
-        help='Will give you a random number and whatever you input.'
+        help='Will give you a random number and whatever you input.',
         )
     async def roll_c(self, ctx, sides = 6.0):
         try:
@@ -208,7 +213,7 @@ class Fun(commands.Cog):
         aliases= ['8b','Eightball'],
         brief='It\'s a magic 8ball.',
         help="It's like 8ball, but sarcastic.",
-        usage='8ball [question]'
+        usage='8ball [question]',
         )
     async def sarcastic_eightball(self, ctx, *, question = None):
         if question == None:
@@ -257,7 +262,7 @@ class Fun(commands.Cog):
         name="Insult",
         brief="Insults someone",
         usage="insult <name> <second name> ...",
-        help="Insults someone. It'll insult you if you don't tell it who."
+        help="Insults someone. It'll insult you if you don't tell it who.",
         )
     @commands.cooldown(2, 5, type=commands.BucketType.member)
     async def insult_c(self, ctx, *, names=None):
@@ -284,6 +289,48 @@ class Fun(commands.Cog):
     @commands.is_owner()
     async def tictactoe_start(self, ctx):
         return await ctx.send(self.tictac.make_board())
+
+    @commands.command(
+        name="Pokesearch",
+        brief="Searches for pokemon",
+        usage="pokesearch <letters>",
+        help="Finds all pokemon with certain letters in the name",
+        aliases=["ps"],
+        )
+    async def pokemon_search(self, ctx, *, keys:str=None):
+        if keys is None:
+            return await ctx.send(
+                f"{ctx.prefix}{ctx.invoked_with} letters here\nSeparate keys with a space")
+        else:
+            pokes = self.pokemon.all_pokemon(keys)
+            if len(pokes) == 0:
+                return await ctx.send("No pokemon found")
+            if len(pokes) == 1:
+                poke = pokes[0]
+                embed = discord.Embed(
+                    title=poke["name"],
+                    color=Common_info.blue,
+                ).set_footer(
+                    text=f"Pokedex ID: {poke['id']}"
+                ).set_image(url=poke["image"])
+                return await ctx.send(embed=embed)
+            else:
+                desc = ""
+                count = 0
+                for poke in pokes:
+                    desc += f"**{poke['name']}** | Dex: `{poke['id']}`\n"
+                    count +=1
+                    if count == 20:
+                        break
+                embed = discord.Embed(
+                    title=f"Pokemon found",
+                    description=desc,
+                    color=Common_info.blue,
+                ).set_footer(
+                    text=f"Pokemon found: {len(pokes)}",
+                )
+                return await ctx.send(embed=embed)
+
 
 def setup(bot):
     bot.add_cog(Fun(bot))
