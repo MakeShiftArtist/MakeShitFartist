@@ -8,25 +8,38 @@ from discord.ext import commands
 from definitions import Database, Datetime, Autopost, Common_info, Embeds
 from definitions import insult, iFunnyEmbeds, Format
 
-with open("tokens.json") as f:
-    data = json.load(f)
+class Logins:
+    def __init__(self):
+        with open("tokens.json") as f:
+            data = json.load(f)
+            self.tyranny = data["ifunny"]["bot"]
+            self.defy = data["ifunny"]["625719520127877136"]
+            self.main = data["ifunny"]["386839413935570954"]
+            self.reddit = data["reddit"]
 
-    reddit = praw.Reddit(
-        client_id=data["reddit"]["client_id"],
-        client_secret=data["reddit"]["client_secret"],
-        user_agent=data["reddit"]["user_agent"]
-    )
-    subreddit = reddit.subreddit('memes')
+accounts = Logins()
+reddit = praw.Reddit(
+    client_id=accounts.reddit["client_id"],
+    client_secret=accounts.reddit["client_secret"],
+    user_agent=accounts.reddit["user_agent"]
+)
+subreddit = reddit.subreddit('memes')
 
-    robot = Client(prefix="-")
-    robot.login(data['ifunny']['email'], data['ifunny']['password'])
+robot = Client(prefix="-")
+robot.login(accounts.tyranny['email'], accounts.tyranny['password'])
+
+defy = Client(prefix="-")
+defy.login(accounts.defy["email"], accounts.defy["password"])
+
+main_account = Client(prefix="-")
+main_account.login(accounts.main["email"], accounts.main["password"])
 
 file = "ifunnydiscord.sqlite"
 
 verified = [
     '54deca36684fd0235b8b456e',
     '5ef252501348a65009117e97',
-    '5f31c815ec5740655a61e46e'
+    '5f31c815ec5740655a61e46e',
     ]
 
 def get_ifunny(data):
@@ -53,6 +66,7 @@ class autopost_info:
         total = database.get_select(self.__doc__)
         self.total = total
         database.close()
+
 
     def get_total(self):
         database = Database(file)
@@ -88,6 +102,7 @@ class iFunny(commands.Cog):
         self.auto = Autopost(robot, subreddit)
         self.autopost = autopost_info()
         self.database = Database(file)
+
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -313,6 +328,53 @@ class iFunny(commands.Cog):
             channel = await self.bot.fetch_channel(768271364271898624)
             await channel.send(embed=log_embed)
         return await ctx.send(embed=embed)
+
+    @commands.command(
+        name="Post",
+        hidden=True,
+    )
+    async def post_c(self, ctx):
+        if ctx.author.id == 386839413935570954:
+            poster = main_account
+        elif ctx.author.id == 625719520127877136:
+            poster = defy
+        else:
+            return
+        await asyncio.sleep(3)
+        if not ctx.message.attachments:
+            return await ctx.send("You need to attach what you want to post")
+
+        if len(ctx.message.attachments) > 1:
+            for att in ctx.message.attachments:
+                try:
+                    poster.post_image_url(
+                        image_url=att.proxy_url,
+                        visibility='public',
+                        wait=False,
+                        timeout=60,
+                        schedule=None,
+                    )
+                    await ctx.send("Image posted, waiting 10 seconds before posting the next")
+                    await asyncio.sleep(10)
+                except Exception as e:
+                    print(e)
+                    await ctx.send("Error occured. Ping Shift for help")
+        else:
+            for att in ctx.message.attachments:
+                try:
+                    poster.post_image_url(
+                        image_url=att.proxy_url,
+                        visibility='public',
+                        wait=False,
+                        timeout=60,
+                        schedule=None,
+                    )
+                    await ctx.send("Image posted.")
+                except Exception as e:
+                    print(e)
+                    await ctx.send("Error occured. Ping Shift for help")
+
+
 
 
 def setup(bot):
