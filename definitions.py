@@ -906,3 +906,43 @@ class Insults:
             return json["insult"]
         else:
             raise json["error_message"]
+
+class PokemonHelper:
+    def __init__(self):
+        self.kalos = "https://www.pokemon.com/uk/api/pokedex/kalos"
+
+    def all_pokemon(self, name:str = None):
+        res = []
+        added = []
+        if name is None:
+            pokes = requests.get(self.kalos)
+            json = pokes.json()
+            for obj in json:
+                poke = {
+                    "name": obj["name"],
+                    "image": obj["ThumbnailImage"],
+                    "id": obj["number"]
+                }
+                res.append(poke)
+            return res
+        else:
+            name = str(name)
+            check_for = name.split()
+            pokes = requests.get(self.kalos)
+            json = pokes.json()
+            for obj in json:
+                all_in = False
+                for letters in check_for:
+                    if letters.lower() not in obj["name"].lower() or \
+                        obj["number"] in added:
+                        break
+                else:
+                    poke = {
+                        "name": obj["name"],
+                        "image": obj["ThumbnailImage"],
+                        "id": obj["number"]
+                    }
+                    res.append(poke)
+                    added.append(obj["number"])
+
+        return res
