@@ -1,4 +1,4 @@
-from minesweeper import draw
+import games
 import discord
 import asyncio
 from discord.ext import commands
@@ -9,11 +9,10 @@ import praw
 import re
 
 
-ClientBase = objects._mixin.ClientBase()
-
 class Fun(commands.Cog):
     '''Commands to add some fun to your server'''
     def __init__(self, bot):
+        self.tictac = games.TicTacToe()
         self.bot = bot
         self.insult = Insults()
         self.names = {
@@ -26,6 +25,9 @@ class Fun(commands.Cog):
             "wife-e": "macey",
             "wife": "macey",
             "meika_": "meika",
+            "nabb-e": "nabbit",
+            "shift": "makeshiftartist",
+            "makeshift": "makeshiftartist",
         }
         self.friends = {
             "defy": {
@@ -34,8 +36,8 @@ class Fun(commands.Cog):
                 "id": 625719520127877136,
             },
             "walkstr8t": {
-                "message": "Imagine",
-                "reacts": [u"\U0001f5a4"],
+                "message": "put on the cat ears",
+                "reacts": [u"\U0001f43e"],
                 "id": 456972240311943170,
             },
             "cesar": {
@@ -63,6 +65,21 @@ class Fun(commands.Cog):
                 "reacts": ["<:doitagain:798790082009235476>"],
                 "id": 527342369729806336,
             },
+            "nabbit": {
+                "message": "I'm fast. Faster than you. That's all you need to know",
+                "reacts": [u"\U0001f344"],
+                "id": 651244875915853825,
+            },
+            "ellamenope": {
+                "message": "ily \U0001f642 hugs",
+                "reacts": [u"\U0001f49c"],
+                "id": 645783211955322961,
+            },
+            "makeshiftartist": {
+                "message": "Your toes, hand 'em over",
+                "reacts": [u"\U0001f608"],
+                "id": 386839413935570954,
+            },
         }
 
     @commands.Cog.listener()
@@ -76,7 +93,9 @@ class Fun(commands.Cog):
             "walkstr8t", "walk", "defy", "cesar",
             "ella", "ellamenope", "soba", "cold..soba",
             "child", "creature", "cweature", "kierkegaard",
-            "macey", "wife-e", "meika", "meika_"
+            "macey", "wife-e", "meika", "meika_",
+            "nabbit", "nabb-e", "shift", "makeshift",
+            "makeshiftartist",
             ]
         )
     @commands.bot_has_permissions(manage_webhooks=True)
@@ -95,6 +114,10 @@ class Fun(commands.Cog):
 
             friend = self.friends[name]
             user = await self.bot.fetch_user(friend["id"])
+            try:
+                await ctx.message.delete()
+            except discord.Forbidden:
+                pass
             msg = await webhook.send(
                 friend["message"],
                 username=user.display_name,
@@ -126,7 +149,7 @@ class Fun(commands.Cog):
             size = 13
         if bombs >= (size * size) - 1:
             bombs = (size * size) - 1
-        board = draw(size, size, bombs)
+        board = games.Minesweeper.draw(size, size, bombs)
         await ctx.send(
             f'**Minesweeper: {size} by {size} with {bombs} total bombs.\n{board}**'
             )
@@ -257,5 +280,10 @@ class Fun(commands.Cog):
         embed.set_footer(text=ctx.author)
         return await ctx.send(embed=embed)
 
+    @commands.group(hidden=True, name="tictactoe", aliases=['ttt'], )
+    @commands.is_owner()
+    async def tictactoe_start(self, ctx):
+        return await ctx.send(self.tictac.make_board())
+
 def setup(bot):
-    bot.add_cog(fun(bot))
+    bot.add_cog(Fun(bot))
