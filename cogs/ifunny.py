@@ -5,7 +5,8 @@ import asyncio
 from random import randint
 from ifunny import Client, objects
 from discord.ext import commands
-from definitions import *
+from definitions import Database, Datetime, Autopost, Common_info, Embeds
+from definitions import insult, iFunnyEmbeds, Format
 
 with open("tokens.json") as f:
     data = json.load(f)
@@ -95,7 +96,7 @@ class iFunny(commands.Cog):
     @commands.command(
         name='Autopost',
         aliases=['ap'],
-        hidden=True,
+        hidden=True
         )
     @commands.is_owner()
     async def autopost_toggle(self, ctx):
@@ -182,7 +183,10 @@ class iFunny(commands.Cog):
             return await message.edit(embed=embed)
 
         embed = iFunnyEmbeds.iFunnyUserEmbed(user)
-        return await message.edit(embed=embed)
+        try:
+            return await message.edit(embed=embed)
+        except Exception:
+            return await ctx.send(embed=embed)
 
     @get_ifunny_user.error
     async def get_ifunny_user_error(self, ctx, error):
@@ -204,7 +208,7 @@ class iFunny(commands.Cog):
         aliases=['sub'],
         brief='Subscribes to an iFunny account',
         usage='subscribe [username]',
-        help='This will make the bot subscribe to an iFunny account.'
+        help='This will make the bot subscribe to an iFunny account.',
         )
     @commands.cooldown(1, 5.0, commands.BucketType.member)
     async def subscribe_c(self, ctx, username=None):
@@ -261,7 +265,7 @@ class iFunny(commands.Cog):
         usage='Smileposts [username]',
         help='Smiles up to 50 posts from an iFunny profile. Ignores smiled posts',
         aliases=['smile', 'likeposts'],
-        cooldown_after_parsing=True
+        cooldown_after_parsing=True,
         )
     @commands.cooldown(2, 20.0, commands.BucketType.member)
     async def smileposts_c(self, ctx, username: str = None):
@@ -294,6 +298,7 @@ class iFunny(commands.Cog):
                 break
         embed = discord.Embed(
             title=f'Finished smiling {count} posts from {user.nick}',
+            description=f"{post_num} posts seen.",
             color=Common_info.blue
             )
         return await message.edit(embed=embed)
