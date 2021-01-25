@@ -123,7 +123,9 @@ class Moderation(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        is_muted = self.db.get_select(f'SELECT IsMuted FROM Mutes WHERE (GuildID = "{member.guild.id}" AND MemberID = "{member.id}")')
+        is_muted = self.db.get_select(
+            f'SELECT IsMuted FROM Mutes WHERE (GuildID = "{member.guild.id}" AND MemberID = "{member.id}")'
+            )
         if is_muted is None:
             return
         if is_muted:
@@ -131,7 +133,10 @@ class Moderation(commands.Cog):
             muted_role = await mutee.get_role()
             await mutee.mute(f'Automuted because {member} left to avoid mute')
 
-    @commands.command(hidden=True, name='forceunmute')
+    @commands.command(
+        name='forceunmute',
+        hidden=True,
+        )
     @commands.is_owner()
     @commands.dm_only()
     async def force_unmute(self, ctx, guildID:int, memberID:int=386839413935570954):
@@ -161,8 +166,13 @@ class Moderation(commands.Cog):
             print(error)
 
 
-    @commands.command(name='Stfu', aliases=['mute'], usage='stfu [@member] <reason>', brief='Mutes a member',
-    help='Makes a user shut the fuck up. Tries to get a "Mute" or "In Brazil" role. Not my fault if you don\'t set the roles properly')
+    @commands.command(
+        name='Stfu',
+        aliases=['mute'],
+        usage='stfu [@member] <reason>',
+        brief='Mutes a member',
+        help='Makes a user shut the fuck up. On the first use, give it a second.',
+        )
     @commands.has_permissions(manage_roles = True)
     @commands.bot_has_permissions(manage_roles=True)
     async def mute_c(self, ctx, member: discord.Member = None, *, reason:ActionReason=None):
@@ -222,8 +232,12 @@ class Moderation(commands.Cog):
             print(error)
             return await ctx.send(error)
 
-    @commands.command(name='Unmute', brief='Unmutes a member', usage='unmute [@member] <reason>',
-    help="Allows someone to speak after you've made them stfu.")
+    @commands.command(
+        name='Unmute',
+        brief='Unmutes a member',
+        usage='unmute [@member] <reason>',
+        help="Allows someone to speak after you've made them stfu.",
+        )
     @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     async def unmute_c(self, ctx, member: discord.Member = None, *, reason:ActionReason=None):
@@ -277,14 +291,19 @@ class Moderation(commands.Cog):
 
 
 
-    @commands.command(name='Purge',brief='Bulk deletes messages', aliases=['clear'],
-    help='Deletes multiple messages at once\n> Defaults to `5` if no amount is passed through', usage='purge [amount]')
+    @commands.command(
+        name='Purge',
+        brief='Bulk deletes messages',
+        aliases=['clear'],
+        help='Deletes multiple messages at once\n> Defaults to `5`',
+        usage='purge [amount]',
+        )
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     @commands.cooldown(2,5.0,type=commands.BucketType.guild)
     async def purge_c(self, ctx, amount : int = 5):
-        if amount > 1000:
-            amount = 1000
+        if amount > 100:
+            amount = 100
         elif amount < 0:
             amount = 0
 
@@ -298,12 +317,7 @@ class Moderation(commands.Cog):
         embed = discord.Embed(title=f"{count} messages deleted", color = Common_info.blue)
         embed.add_field(name="Moderator", value = f"{author.mention}\n(ID: {author.id})", inline=False)
         embed.set_footer(text=Datetime.get_full_date())
-        message = await ctx.send(embed=embed)
-        await asyncio.sleep(5)
-        try:
-            return await message.delete()
-        except Exception:
-            return None
+        message = await ctx.send(embed=embed, delete_after=5)
 
     @purge_c.error
     async def purge_c_error(self, ctx, error):
@@ -327,7 +341,12 @@ class Moderation(commands.Cog):
             return await ctx.send(embed=embed)
 
 
-    @commands.command(name='Ban',brief='Bans a member',help='Bans a member from the server', usage=f'Ban [@member]')
+    @commands.command(
+        name='Ban',
+        brief='Bans a member',
+        help='Bans a member from the server',
+        usage=f'Ban [@member]',
+        )
     @commands.guild_only()
     @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
@@ -364,8 +383,12 @@ class Moderation(commands.Cog):
             return await ctx.send(embed=embed)
 
 
-    @commands.command(name='Unban',brief='Unbans a member',
-    help='Unbans a member from the server', usage=f'Unban [username#1234]')
+    @commands.command(
+        name='Unban',
+        brief='Unbans a member',
+        help='Unbans a member from the server',
+        usage=f'Unban [username#1234]',
+        )
     @commands.guild_only()
     @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
@@ -404,7 +427,12 @@ class Moderation(commands.Cog):
             return await ctx.send(embed=embed)
 
 
-    @commands.command(name='Kick',brief='Kicks a member',help='Kicks a member from the server', usage=f'Kick [@member]')
+    @commands.command(
+        name='Kick',
+        brief='Kicks a member',
+        help='Kicks a member from the server',
+        usage=f'Kick [@member]',
+        )
     @commands.guild_only()
     @commands.bot_has_permissions(kick_members=True)
     @commands.has_permissions(kick_members=True)
@@ -452,4 +480,4 @@ class Moderation(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(moderation(bot))
+    bot.add_cog(Moderation(bot))
