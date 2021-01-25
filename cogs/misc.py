@@ -10,6 +10,11 @@ import re
 file = "ifunnydiscord.sqlite"
 IMONKE_GUILD_ID = 646164479863947266
 POINT_COUNT_REGEX = "^((\[|\()\d+(\]|\))(\ +)?)+"
+TRELLO_DESC = """
+Sends a report to [iMonke's Trello board](https://trello.com/b/6VnXOnCr/)
+> Use `-trello` for a list of labels and more info
+> You must be in iMonke to use this command.
+"""
 
 with open("tokens.json") as f:
     data = json.load(f)
@@ -30,6 +35,10 @@ class Misc(commands.Cog):
         self.user_reacts = {
             420: "emoji"
         }
+        self.deletes = {
+        }
+        self.edits = {
+        }
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -42,6 +51,119 @@ class Misc(commands.Cog):
                 await message.add_reaction(self.user_reacts[message.author.id])
             except Exception:
                 return
+
+    @commands.Cog.listener()
+    async def on_message_delete(self, message):
+        if message.author.id == self.bot.user.id:
+            return
+        if (not message.content and \
+            not message.attachments):
+            return
+        info = {
+            "message": message,
+            "time": Datetime.get_full_date()
+        }
+        self.deletes[message.guild.id] = info
+
+    @commands.Cog.listener()
+    async def on_message_edit(self, before, after):
+        if before.author.id == self.bot.user.id:
+            return
+        if not before.content:
+            return
+        try:
+            current_guild = self.edits[before.guild.id]
+            if before.id == current_guild["id"]:
+                current_guild["extra"] = before
+                current_guild["after"] = after
+                return
+        except KeyError:
+            pass
+        info = {
+            "id": before.id,
+            "before": before,
+            "extra": None,
+            "after": after,
+            "time": Datetime.get_full_date()
+        }
+        self.edits[before.guild.id] = info
+
+    @commands.command(
+        name="Snipe",
+        usage="snipe",
+        help="Sends the most recently deleted message",
+        brief="Snipes a deleted message",
+        aliases=['s'],
+        )
+    async def snipe_c(self, ctx):
+        try:
+            info = self.deletes[ctx.guild.id]
+            message = info["message"]
+        except KeyError:
+            return await ctx.send("Nothing to snipe!")
+        embed = discord.Embed(
+            description=message.content,
+            color=Common_info.blue,
+        ).set_author(
+            name=message.author,
+            icon_url=message.author.avatar_url
+        ).set_footer(
+            text=info["time"]
+        )
+        for pic in message.attachments:
+            link = pic.proxy_url
+            if not link:
+                link = pic.url
+            if link.endswith(".jpg") or \
+                link.endswith(".png") or \
+                link.endswith(".gif"):
+                embed.set_image(url=link)
+            break
+        return await ctx.send(embed=embed)
+
+    @commands.command(
+        name="Editsnipe",
+        usage="editsnipe",
+        help="Sends the most recently edited message",
+        brief="Snipes an edited message",
+        aliases=["es"],
+        )
+    async def editsnipe_c(self, ctx):
+        try:
+            info = self.edits[ctx.guild.id]
+            og = info["before"]
+        except KeyError:
+            return await ctx.send("Nothing to snipe!")
+        embed = discord.Embed(
+            title="Original",
+            description=og.content,
+            color=Common_info.blue,
+        ).set_author(
+            name=og.author,
+            icon_url=og.author.avatar_url
+        ).set_footer(
+            text=info["time"]
+        ).add_field(
+            name="New",
+            value=info["after"].content[:1023],
+            inline=False,
+        )
+        if info["extra"] is not None:
+            embed.insert_field_at(
+                0,
+                name="Previous Edit",
+                value=info["extra"].content[:1023]
+            )
+        for pic in og.attachments:
+            link = pic.proxy_url
+            if not link:
+                link = pic.url
+            if link.endswith(".jpg") or \
+                link.endswith(".png") or \
+                link.endswith(".gif"):
+                embed.set_image(url=link)
+            break
+        return await ctx.send(embed=embed)
 
     @commands.command(hidden=True, name='IP')
     @commands.is_owner()
@@ -69,9 +191,13 @@ class Misc(commands.Cog):
             return
         return await ctx.send(error)
 
-    @commands.command(name='Trello', brief="Creates a report for iMonke",
-    help= "Sends a report to [iMonke's Trello board](https://trello.com/b/6VnXOnCr/imonke-development)\n> Use `-trello` for a list of labels and more info\n> You must be in iMonke to use this command.",
-    aliases=['report', 'bug', 'feature', 'feat'], usage='trello <labels> [title]`\n> `<description>')
+    @commands.command(
+        name='Trello',
+        brief="Creates a report for iMonke",
+        help=TRELLO_DESC,
+        aliases=['report', 'bug', 'feature', 'feat'],
+        usage='trello <labels> [title]`\n> `<description>',
+        )
     @commands.guild_only()
     @commands.cooldown(4, 20.0, commands.BucketType.member)
     async def trello_add_card(self, ctx, *, report:str=None):
@@ -91,13 +217,24 @@ class Misc(commands.Cog):
         temp_desc = Format.trello_description(fields)
         bug_info = Trello.Card_labels(fields[0])
         if bug_info.title == '':
-            embed = Embeds.custom_error("You need a title to report bugs or request features", report)
+            embed = Embeds.custom_error(
+                "You need a title to report bugs or request features",
+                report,
+                )
             return await message.edit(embed=embed)
-        trello_desc = f"**Reporter:** `{ctx.author}`\n{temp_desc}\n\n[Message embed]({message.jump_url})"
+        trello_desc = f"**Reporter:** `{ctx.author}`\n{temp_desc}\n\n"
+        trello_desc += Format.hyperlink("Message embed", message.jump_url)
         card = base.add_bug(fields[0] , trello_desc, bug_info.labels)
         time = Datetime.get_full_date()
-        embed= discord.Embed(title='Trello report added to TRIAGE', description=f"[The report]({card.short_url})", color=Common_info.blue)
-        embed.add_field(name='Title', value=bug_info.title, inline=False)
+        embed = discord.Embed(
+            title='Trello report added to `REPORTS`',
+            description=f"[The report]({card.short_url})",
+            color=Common_info.blue,
+            ).add_field(
+                name='Title',
+                value=bug_info.title,
+                inline=False
+            )
 
         labels = ''
         active_labels = Trello.Info.labels_with_names(base, bug_info.labels)
@@ -203,17 +340,36 @@ class Misc(commands.Cog):
         await ctx.send(embed=ping_embed)
 
 
-    @commands.command(name='Invite',brief='Sends an invite link', usage='Invite',
-    help='Sends an invite link to the channel so you can invite the bot to your server')
+    @commands.command(
+        name='Invite',
+        brief='Sends an invite link',
+        usage='Invite',
+        help='Sends important invite links')
     async def invite_c(self, ctx):
-        bot_link = 'https://discord.com/oauth2/authorize?client_id=723105765812076664&scope=bot&permissions=2083912951'
-        embed = discord.Embed(title='Invite links',description=f"[My bot's page](https://top.gg/bot/723105765812076664)",color=Common_info.blue)
-        embed.add_field(name='Bot invite', value=f'[Invite the bot]({bot_link})', inline=False)
-        embed.add_field(name='Support Server', value=f"[Get help here](https://discord.com/invite/4WGpdmE)", inline=False)
+
+        bot_link = "https://discord.com/oauth2/authorize?client_id="
+        bot_link += "723105765812076664&scope=bot&permissions=2083912951"
+        embed = discord.Embed(
+            title='Invite links',
+            description=f"[My bot's page](https://top.gg/bot/723105765812076664)",
+            color=Common_info.blue,
+            ).add_field(
+            name='Bot invite',
+            value=f'[Invite the bot]({bot_link})',
+            inline=False,
+            ).add_field(
+            name='Support Server',
+            value=f"[Get help here](https://discord.com/invite/4WGpdmE)",
+            inline=False,
+            )
         await ctx.send(embed=embed)
 
-    @commands.command(name='User',brief='Gets basic user info', usage='User [@member]',
-    help='This gets info about a discord user by mentioning them')
+    @commands.command(
+        name='User',
+        brief='Gets basic user info',
+        usage='User [@member]',
+        help='This gets info about a discord user by mentioning them',
+        )
     async def user_c(self, ctx, member : discord.Member=None):
         if member is None:
             member = ctx.author
@@ -223,8 +379,11 @@ class Misc(commands.Cog):
     @user_c.error
     async def user_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
-            title = '\U0000274c Bad Argument'
-            embed = discord.Embed(title=title, description=f'You need to mention the user, {insult()}.', color=0xFF0000)
+            embed = discord.Embed(
+                title='\U0000274c Bad Argument',
+                description=f'You need to mention the user, {insult()}.',
+                color=0xFF0000,
+                )
             return await ctx.send(embed=embed)
         else:
             command = "User"
@@ -236,33 +395,46 @@ class Misc(commands.Cog):
                 await channel.send(embed=log_embed)
             return await ctx.send(embed=embed)
 
-    @commands.command(name='Prefix',brief="Sets the prefix for the server.", aliases=['SetPrefix'],
-    help="Sets a specific prefix for the server",usage=f"Prefix [prefix]")
+    @commands.command(
+        name='Prefix',
+        brief="Sets the prefix for the server.",
+        aliases=['SetPrefix'],
+        help="Sets a specific prefix for the server",
+        usage=f"Prefix [prefix]",
+        )
     @commands.has_permissions(manage_guild=True)
     @commands.cooldown(2, 10.0, commands.BucketType.guild)
     async def setprefix_c(self, ctx, *, prefix=None):
         if prefix is None:
-            return await ctx.send(f"Hey, {insult()}. How do you expect me to change the prefix if you don't supply one?")
+            return await ctx.send(
+                f"Hey, {insult()}. How do you expect me to change the prefix if you don't supply one?")
         if len(prefix) > 15:
-            return await ctx.send("That prefix is too long. Why the fuck would you want the prefix to be that long?")
+            return await ctx.send(
+                "That prefix is too long. Why the fuck would you want the prefix to be that long?")
         guildid = ctx.message.guild.id
         db = Database(file)
         cursor = db.cursor
         current_prefix = PREFIX(self.bot, ctx.message)
         if (prefix == '-') and (current_prefix != '-'):
-            cursor.execute(f'DELETE FROM GuildPrefixes\nWHERE (GuildID = "{guildid}")')
+            cursor.execute(
+                f'DELETE FROM GuildPrefixes\nWHERE (GuildID = "{guildid}")'
+                )
             db.save()
             return await ctx.send('The prefix has been reset.')
         elif prefix == current_prefix:
             db.save()
             return await ctx.send(f"That's the same prefix, {insult()}.")
         else:
-            cursor.execute(f'DELETE FROM GuildPrefixes\nWHERE (GuildID = "{guildid}")')
+            cursor.execute(
+                f'DELETE FROM GuildPrefixes\nWHERE (GuildID = "{guildid}")'
+                )
             sql = 'INSERT INTO GuildPrefixes (GuildID, Prefix) VALUES (?,?)'
             values = (guildid, prefix)
             cursor.execute(sql, values)
             db.save()
-            return await ctx.send(f'Prefix set as `{prefix}`.\nDon\'t forget it, {insult()}.')
+            return await ctx.send(
+                f'Prefix set as `{prefix}`.\nDon\'t forget it, {insult()}.'
+                )
 
     @setprefix_c.error
     async def setprefix_error(self, ctx, error):
@@ -275,8 +447,13 @@ class Misc(commands.Cog):
             await channel.send(embed=log_embed)
         return await ctx.send(embed=embed)
 
-    @commands.command(name='Avatar', brief='Gets a users profile picture', usage='Avatar <@user>',
-    help='Sends a users avatar in an embed', aliases=['av','pfp','profilepic'])
+    @commands.command(
+        name='Avatar',
+        brief='Gets a users profile picture',
+        usage='Avatar <@user>',
+        help='Sends a users avatar in an embed',
+        aliases=['av','pfp','profilepic'],
+        )
     async def pfp_c(self, ctx, member:discord.Member=None):
         if member is None:
             member = ctx.message.author
@@ -304,9 +481,10 @@ class Misc(commands.Cog):
         return await ctx.send(embed=embed)
 
     @commands.command(
-        name="Embed", brief="Creates a custom embed",
+        name="Embed",
+        brief="Creates a custom embed",
         help="Creates a custom embed with a title, description and fields.",
-        usage="[title] <description>`\n> `<field title | field description>"
+        usage="[title] <description>`\n> `<field title | field description>",
         )
     async def send_embed(self, ctx, title=None, *, desc=None):
         try:
@@ -355,4 +533,4 @@ class Misc(commands.Cog):
         return await ctx.send(embed=embed)
 
 def setup(bot):
-    bot.add_cog(misc(bot))
+    bot.add_cog(Misc(bot))
