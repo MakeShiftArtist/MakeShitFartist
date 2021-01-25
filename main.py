@@ -105,6 +105,11 @@ async def on_command_error(ctx, error):
         return await ctx.send(error)
     elif isinstance(error, commands.BotMissingPermissions):
         return await ctx.send(error)
+    elif isinstance(error, discord.Forbidden):
+        try:
+            return await ctx.send(error)
+        except discord.Forbidden:
+            return
     elif isinstance(error, commands.CommandOnCooldown):
         time = round(error.retry_after*100)/100
         return await ctx.send(f"Command on cooldown. Try again in {time} seconds")
