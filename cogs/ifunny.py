@@ -5,8 +5,7 @@ import asyncio
 from random import randint
 from ifunny import Client, objects
 from discord.ext import commands
-from definitions import Database, Datetime, Autopost, Common_info, Embeds
-from definitions import insult, iFunny
+from definitions import *
 
 with open("tokens.json") as f:
     data = json.load(f)
@@ -93,7 +92,11 @@ class iFunny(commands.Cog):
     async def on_ready(self):
         print('iFunny Cog loaded')
 
-    @commands.command(name='Autopost', hidden=True)
+    @commands.command(
+        name='Autopost',
+        aliases=['ap'],
+        hidden=True,
+        )
     @commands.is_owner()
     async def autopost_toggle(self, ctx):
         exists = self.database.get_select(
@@ -150,35 +153,35 @@ class iFunny(commands.Cog):
                 )
             self.database.save()
 
-    """@autopost_toggle.error
+    @autopost_toggle.error
     async def autopost_toggle_error(self, ctx, error):
-        return await ctx.send(error)"""
+        return await ctx.send(error)
 
     @commands.command(
         name='iFunnyuser',
-        brief='Retrieves an iFunny profile', aliases=['if', 'ifuser'],
+        brief='Retrieves an iFunny profile',
+        aliases=['if', 'ifuser'],
         help='Gets a info about an iFunny user.',
-        usage='iFunnyuser [username]')
+        usage='iFunnyuser [username]',
+        )
     @commands.cooldown(1, 2.0, type=commands.BucketType.member)
-    async def get_ifunny_user(self, ctx, username: str = None):
+    async def get_ifunny_user(self, ctx, *, username: str = None):
         if username is None:
             return await ctx.send(
                 f"What's the iFunny account you wan't want me to find, {insult()}?"
                 )
-        embed = discord.Embed(
-            title='<a:loading:774385294106689557> Finding user...',
-            color=Common_info.blue
-            )
+        embed = Embeds.loading("Finding user...")
         message = await ctx.send(embed=embed)
         user = get_ifunny(username)
         if user is None:
             embed = discord.Embed(
                 title='Failed',
                 description=f'{username} does not exist',
-                color=Common_info.red)
+                color=Common_info.red,
+                )
             return await message.edit(embed=embed)
 
-        embed = iFunny.iFunnyUserEmbed(user)
+        embed = iFunnyEmbeds.iFunnyUserEmbed(user)
         return await message.edit(embed=embed)
 
     @get_ifunny_user.error
@@ -192,13 +195,15 @@ class iFunny(commands.Cog):
             embed = discord.Embed(
                 title="Failed",
                 description=error,
-                color=Common_info.red
+                color=Common_info.red,
                 )
             return await ctx.send(embed=embed)
 
     @commands.command(
-        name='Subscribe', aliases=['sub'],
-        brief='Subscribes to an iFunny account', usage='subscribe [username]',
+        name='Subscribe',
+        aliases=['sub'],
+        brief='Subscribes to an iFunny account',
+        usage='subscribe [username]',
         help='This will make the bot subscribe to an iFunny account.'
         )
     @commands.cooldown(1, 5.0, commands.BucketType.member)
@@ -209,7 +214,7 @@ class iFunny(commands.Cog):
                 )
         embed = discord.Embed(
             title='<a:loading:774385294106689557> Finding user...',
-            color=Common_info.blue
+            color=Common_info.blue,
             )
         message = await ctx.send(embed=embed)
         user = get_ifunny(username)
@@ -219,7 +224,7 @@ class iFunny(commands.Cog):
                 color=Common_info.red)
             await message.edit(embed=embed)
         elif user.is_subscription and user.id not in verified:
-            embed = iFunny.iFunnySubEmbed(user, robot)
+            embed = iFunnyEmbeds.iFunnySubEmbed(user, robot)
             user.unsubscribe()
             await message.edit(embed=embed)
         elif user.id in verified:
@@ -229,7 +234,7 @@ class iFunny(commands.Cog):
                 )
             await message.edit(embed=embed)
         else:
-            embed = iFunny.iFunnySubEmbed(user, robot)
+            embed = iFunnyEmbeds.iFunnySubEmbed(user, robot)
             user.subscribe()
             await message.edit(embed=embed)
 
@@ -251,10 +256,13 @@ class iFunny(commands.Cog):
             return await ctx.send(embed=embed)
 
     @commands.command(
-        name='Smileposts', brief="Smiles an iFunny users posts",
+        name='Smileposts',
+        brief="Smiles an iFunny users posts",
         usage='Smileposts [username]',
         help='Smiles up to 50 posts from an iFunny profile. Ignores smiled posts',
-        aliases=['smile', 'likeposts'], cooldown_after_parsing=True)
+        aliases=['smile', 'likeposts'],
+        cooldown_after_parsing=True
+        )
     @commands.cooldown(2, 20.0, commands.BucketType.member)
     async def smileposts_c(self, ctx, username: str = None):
         if username is None:
@@ -301,49 +309,6 @@ class iFunny(commands.Cog):
             await channel.send(embed=log_embed)
         return await ctx.send(embed=embed)
 
-    @commands.command(name='Unsmile', hidden=True)
-    @commands.is_owner()
-    async def unsmile_c(self, ctx, username:str = None, amount = 50):
-        if username is None:
-            return await ctx.send('What account do you want me to unsmile?')
-        embed = discord.Embed(title='<a:loading:774385294106689557> Finding user...', color=Common_info.blue)
-        message = await ctx.send(embed=embed)
-        user = get_ifunny(username)
-        if user is None:
-            embed = discord.Embed(title='Failed', description=f'{username} does not exist', color=0xFF0000)
-            return await message.edit(embed=embed)
-        embed = discord.Embed(title=f"<a:loading:774385294106689557> Unsmiling {user.nick}'s posts...", color=Common_info.blue)
-        await message.edit(embed=embed)
-        count = 0
-        post_num=0
-        failed = 0
-        for post in user.timeline:
-            post_num+=1
-            if post.is_unsmiled:
-                if post_num == amount:
-                    break
-                continue
-            await asyncio.sleep(1)
-            try:
-                post.unsmile()
-                count+=1
-            except:
-                failed += 1
-                continue
-            if count == amount:
-                break
-        embed = discord.Embed(
-            title=f'Finished unsmiling {count} posts from {user.nick}',
-            description=f"{failed} posts had too many unsmiles \U0001f974",
-            color=Common_info.blue
-            )
-        try:
-            await message.edit(embed=embed)
-        except Exception:
-            await ctx.send(embed=embed)
-
-
-
 
 def setup(bot):
-    bot.add_cog(ifunny(bot))
+    bot.add_cog(iFunny(bot))
