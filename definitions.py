@@ -159,6 +159,13 @@ def yesorno() -> str:
 class Format:
 
     @staticmethod
+    def hyperlink(text:str, link:str):
+        if not text or not link:
+            raise Exception("Hyperlink needs text and a link to work")
+        else:
+            return f"[{text}]({link})"
+
+    @staticmethod
     def multiple(names: list) -> str:
         res = ""
         if len(names) == 1:
@@ -421,7 +428,7 @@ class Embeds:
 
         # Final info
         location_data = f"{command} raised an exception in {where} by {author}."
-        now = Datetime._now()
+        now = Datetime.now()
         time = Datetime.get_full_date(now)
 
         # Terminal
@@ -645,7 +652,7 @@ class Database:
             return None
 
 
-class iFunny:
+class iFunnyEmbeds:
     """IFunny Specific Embeds/Functions"""
 
     @staticmethod
@@ -667,7 +674,7 @@ class iFunny:
     @staticmethod
     def iFunnyUserEmbed(user):
         username = str(user.nick)
-        nextdays = iFunny.getrankdays(str(user.rank), int(user.days))
+        nextdays = iFunnyEmbeds.getrankdays(str(user.rank), int(user.days))
         if user.is_verified:
             username += ' <:ifunnyverified:768264154628096060>'
 
