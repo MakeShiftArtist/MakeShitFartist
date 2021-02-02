@@ -2,4 +2,4 @@ discord.py
 praw
 requests
 py-trello
-git+http://git.gastrodon.io/gastrodon/ifunny.git#egg=ifunny
+git+http://git.gastrodon.io/MakeShiftArtist/ifunny.py.git
