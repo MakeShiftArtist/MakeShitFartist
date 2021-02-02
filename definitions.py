@@ -986,7 +986,8 @@ class Pokedex:
         result = []
         added = []
         for poke in pokes:
-            if self.search(name, poke["name"]):
+            if self.search(name, poke["name"]) and \
+                poke["number"] not in added:
                 added.append(poke["number"])
                 result.append(self.pokemon(poke))
                 continue
