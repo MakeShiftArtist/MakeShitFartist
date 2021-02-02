@@ -430,8 +430,7 @@ class Embeds:
 
         # Final info
         location_data = f"{command} raised an exception in {where} by {author}."
-        now = Datetime.now()
-        time = Datetime.get_full_date(now)
+        time = Datetime.get_full_date()
 
         # Terminal
         eql = "="*20
