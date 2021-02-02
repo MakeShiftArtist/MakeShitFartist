@@ -5,15 +5,14 @@ import asyncio
 from random import randint
 from ifunny import Client, objects
 from discord.ext import commands
-from definitions import Database, Datetime, Autopost, Common_info, Embeds
-from definitions import insult, iFunnyEmbeds, Format
+from definitions import *
 
 class Logins:
     def __init__(self):
         with open("tokens.json") as f:
             data = json.load(f)
-            self.tyranny = data["ifunny"]["bot"]
-            self.defy = data["ifunny"]["625719520127877136"]
+            self.bot = data["ifunny"]["bot"]
+            self.reactions = data["ifunny"]["625719520127877136"]
             self.main = data["ifunny"]["386839413935570954"]
             self.reddit = data["reddit"]
 
@@ -26,10 +25,10 @@ reddit = praw.Reddit(
 subreddit = reddit.subreddit('memes')
 
 robot = Client(prefix="-")
-robot.login(accounts.tyranny['email'], accounts.tyranny['password'])
+robot.login(accounts.bot['email'], accounts.bot['password'])
 
-defy = Client(prefix="-")
-defy.login(accounts.defy["email"], accounts.defy["password"])
+reactions = Client(prefix="-")
+reactions.login(accounts.reactions["email"], accounts.reactions["password"])
 
 main_account = Client(prefix="-")
 main_account.login(accounts.main["email"], accounts.main["password"])
@@ -87,13 +86,6 @@ class autopost_info:
         database.close()
 
 
-
-@robot.event(name="on_connect")
-def _connected_to_chat(data):
-    print(f"Logged into {robot.nick}")
-    print(Datetime.get_full_date(Datetime.now()))
-
-
 class iFunny(commands.Cog):
     '''Commands for interacting with iFunny'''
 
@@ -130,7 +122,7 @@ class iFunny(commands.Cog):
             embed = discord.Embed(
                 title='Autoposted Started',
                 description='Memes post every 5-15 minutes',
-                color=Common_info.blue
+                color=discord.Color.blue()
             )
             await ctx.send(embed=embed)
             self.autopost.on = True
@@ -152,7 +144,7 @@ class iFunny(commands.Cog):
             embed = discord.Embed(
                 title='Autoposted Stopped',
                 description=f'Autoposted `{self.autopost.count}` meme(s)',
-                color=Common_info.blue
+                color=discord.Color.blue()
             )
             self.autopost.total += self.autopost.count
             embed.add_field(
@@ -193,7 +185,7 @@ class iFunny(commands.Cog):
             embed = discord.Embed(
                 title='Failed',
                 description=f'{username} does not exist',
-                color=Common_info.red,
+                color=discord.Color.red(),
                 )
             return await message.edit(embed=embed)
 
@@ -214,7 +206,7 @@ class iFunny(commands.Cog):
             embed = discord.Embed(
                 title="Failed",
                 description=error,
-                color=Common_info.red,
+                color=discord.Color.red(),
                 )
             return await ctx.send(embed=embed)
 
@@ -233,14 +225,14 @@ class iFunny(commands.Cog):
                 )
         embed = discord.Embed(
             title='<a:loading:774385294106689557> Finding user...',
-            color=Common_info.blue,
+            color=discord.Color.blue(),
             )
         message = await ctx.send(embed=embed)
         user = get_ifunny(username)
         if user is None:
             embed = discord.Embed(
                 title=f'{username} does not exist',
-                color=Common_info.red)
+                color=discord.Color.red())
             await message.edit(embed=embed)
         elif user.is_subscription and user.id not in verified:
             embed = iFunnyEmbeds.iFunnySubEmbed(user, robot)
@@ -249,7 +241,7 @@ class iFunny(commands.Cog):
         elif user.id in verified:
             embed = discord.Embed(
                 title=f"No, {insult()}. That's my account",
-                color=Common_info.blue
+                color=discord.Color.blue()
                 )
             await message.edit(embed=embed)
         else:
@@ -270,7 +262,7 @@ class iFunny(commands.Cog):
             embed = discord.Embed(
                 title="Failed",
                 description="Subscription failed",
-                color=Common_info.red)
+                color=discord.Color.red())
             embed.add_field(name="Reason", value=str(error))
             return await ctx.send(embed=embed)
 
@@ -314,7 +306,7 @@ class iFunny(commands.Cog):
         embed = discord.Embed(
             title=f'Finished smiling {count} posts from {user.nick}',
             description=f"{post_num} posts seen.",
-            color=Common_info.blue
+            color=discord.Color.blue()
             )
         return await message.edit(embed=embed)
 
@@ -333,47 +325,89 @@ class iFunny(commands.Cog):
         name="Post",
         hidden=True,
     )
-    async def post_c(self, ctx):
+    async def post_c(self, ctx, content_url=None):
         if ctx.author.id == 386839413935570954:
             poster = main_account
         elif ctx.author.id == 625719520127877136:
-            poster = defy
+            poster = reactions
         else:
             return
-        await asyncio.sleep(3)
-        if not ctx.message.attachments:
-            return await ctx.send("You need to attach what you want to post")
 
-        if len(ctx.message.attachments) > 1:
-            for att in ctx.message.attachments:
-                try:
-                    poster.post_image_url(
-                        image_url=att.proxy_url,
-                        visibility='public',
-                        wait=False,
-                        timeout=60,
-                        schedule=None,
-                    )
-                    await ctx.send("Image posted, waiting 10 seconds before posting the next")
-                    await asyncio.sleep(10)
-                except Exception as e:
-                    print(e)
-                    await ctx.send("Error occured. Ping Shift for help")
-        else:
-            for att in ctx.message.attachments:
-                try:
-                    poster.post_image_url(
-                        image_url=att.proxy_url,
-                        visibility='public',
-                        wait=False,
-                        timeout=60,
-                        schedule=None,
-                    )
-                    await ctx.send("Image posted.")
-                except Exception as e:
-                    print(e)
-                    await ctx.send("Error occured. Ping Shift for help")
+        if not ctx.message.attachments and \
+            not content_url:
+            return await ctx.send("You need an attachment or link of what you want to post")
 
+        links = ""
+        count = 0
+        message = await ctx.send("Posting content")
+        post = None
+
+        if content_url:
+            count+=1
+            if content_url.endswith(".mp4"):
+                type = "video_clip"
+            else:
+                type = "pic"
+            try:
+                post = poster.post_url(
+                    url=content_url,
+                    visibility='public',
+                    type=type,
+                    wait=True,
+                    timeout=60,
+                    schedule=None,
+                )
+                links += Format.hyperlink(f"Post #{count}", post.link)
+            except AttributeError:
+                links += f"Post #{count} failed to post in 60 seconds\n"
+            except Exception as e:
+                print(e)
+                await ctx.send(e)
+
+        for att in ctx.message.attachments:
+            if post is not None:
+                await asyncio.sleep(10)
+            count+=1
+            if att.proxy_url.endswith(".mp4"):
+                type = "video_clip"
+            else:
+                type = "pic"
+            try:
+                post = poster.post_url(
+                    url=att.proxy_url,
+                    visibility='public',
+                    type=type,
+                    wait=True,
+                    timeout=60,
+                    schedule=None,
+                )
+                links += Format.hyperlink(f"Post #{count}", post.link) + "\n"
+            except AttributeError:
+                links += f"Post #{count} failed to post in 60 seconds\n"
+            except Exception as e:
+                print(e)
+                await ctx.send(e)
+
+        if len(links) < 2:
+            embed = discord.Embed(
+                title="No content posted",
+                color=discord.Color.red(),
+            )
+
+        embed = discord.Embed(
+            title="Links",
+            description=links,
+            color=discord.Color.blue(),
+            timestamp=Datetime.now()
+        )
+
+        try:
+            await message.edit(content=None, embed=embed)
+        except Exception as e:
+            print(e)
+            print(type(e))
+            print(dir(e))
+            await ctx.send(embed=embed)
 
 
 
