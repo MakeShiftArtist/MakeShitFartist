@@ -906,6 +906,7 @@ class Insults:
         else:
             raise json["error_message"]
 
+
 class Pokedex:
     def __init__(self):
         self.kalos = "https://www.pokemon.com/uk/api/pokedex/kalos"
@@ -959,24 +960,23 @@ class Pokedex:
             res.append(self.pokemon(poke))
         return res
 
-    def checkfor_inside(self, check_for:str, inside:str) -> bool:
+    def search(self, check_for:str, inside:str) -> bool:
         # makes a list based on white spaces
-        check_for = check_for.split()
+        check_for = check_for.lower().split()
         inside = inside.lower()
         previous = 0
-        new = -1
-        temp = -2
+        new = 0
 
         for check in check_for:
-            if check.lower() not in inside:
+            if check not in inside:
                 return False
             else:
-                new = inside.index(check)
+                new = inside.index(check) + 1
                 if new < previous:
                     return False
                 previous = new
                 # replaces the first occurance of the check in the string
-                inside = inside.replace(check, " ", 1)
+                inside = inside.replace(inside[:new + (len(check)-1)], " " * new, 1)
         else:
             # Else occurs if the for loop doesn't break
             return True
@@ -986,10 +986,11 @@ class Pokedex:
         result = []
         added = []
         for poke in pokes:
-            if self.checkfor_inside(name, poke["name"]) and \
-                poke["number"] not in added:
-                result.append(self.pokemon(poke))
+            if self.search(name, poke["name"]):
                 added.append(poke["number"])
+                result.append(self.pokemon(poke))
+                continue
+            continue
         return result
 
     def pokemon_by_id(self, id:int):
