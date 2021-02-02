@@ -181,7 +181,8 @@ class Moderation(commands.Cog):
         if member.top_role >= ctx.guild.me.top_role:
             return await ctx.send("Their role is too high for me to mute them")
         elif member.top_role >= ctx.message.author.top_role:
-            return await ctx.send("Their role is higher than yours lol")
+            return await ctx.send("Their top role has to be lower than yours to mute them")
+
         if reason is None:
             reason = f'**Mod:** {ctx.author} (**ID:** {ctx.author.id})\n**Reason:** No reason given'
 
@@ -203,11 +204,15 @@ class Moderation(commands.Cog):
         await mutee.mute(reason)
 
         mod = ctx.message.author
-        embed = discord.Embed(title=f"{member.display_name} muted by {mod}",
-        description="Maybe now they'll shut the fuck up.", color=Common_info.blue)
-
-        embed.add_field(name="Reason", value = reason)
-        embed.set_footer(text=Datetime.get_full_date())
+        embed = discord.Embed(
+            title=f"{member.display_name} muted by {mod}",
+            description="Maybe now they'll shut the fuck up.",
+            color=discord.Color.blue(),
+            timestamp=Datetime.timestamp(),
+            ).add_field(
+            name="Reason",
+            value = reason,
+            )
         await ctx.send(embed=embed)
 
         is_muted = self.db.get_select(f'SELECT IsMuted FROM Mutes WHERE (GuildID = "{member.guild.id}" AND MemberID = "{member.id}")')
@@ -261,11 +266,15 @@ class Moderation(commands.Cog):
         await mutee.unmute(reason)
 
         mod = ctx.message.author
-        embed = discord.Embed(title=f"{member.display_name} unmuted by {mod}",
-        description="Hopefully they've learned to shut the fuck up.", color=Common_info.blue)
-
-        embed.add_field(name="Reason", value = reason)
-        embed.set_footer(text=Datetime.get_full_date())
+        embed = discord.Embed(
+            title=f"{member.display_name} unmuted by {mod}",
+            description="Hopefully they've learned to shut the fuck up.",
+            color=discord.Color.blue(),
+            timestamp=Datetime.timestamp(),
+        ).add_field(
+            name="Reason",
+            value=reason,
+        )
         await ctx.send(embed=embed)
 
         is_muted = self.db.get_select(f'SELECT IsMuted FROM Mutes WHERE (GuildID = "{member.guild.id}" AND MemberID = "{member.id}")')
@@ -314,10 +323,16 @@ class Moderation(commands.Cog):
         deleted = await ctx.channel.purge(limit=amount)
         count = len(deleted)
         author = ctx.message.author
-        embed = discord.Embed(title=f"{count} messages deleted", color = Common_info.blue)
-        embed.add_field(name="Moderator", value = f"{author.mention}\n(ID: {author.id})", inline=False)
-        embed.set_footer(text=Datetime.get_full_date())
-        message = await ctx.send(embed=embed, delete_after=5)
+        embed = discord.Embed(
+            title=f"{count} messages deleted",
+            color = discord.Color.blue(),
+            timestamp=Datetime.timestamp(),
+        ).add_field(
+            name="Moderator",
+            value=f"{author.mention}\n(ID: {author.id})",
+            inline=False,
+        )
+        await ctx.send(embed=embed, delete_after=5)
 
     @purge_c.error
     async def purge_c_error(self, ctx, error):
@@ -325,7 +340,11 @@ class Moderation(commands.Cog):
             time = round(error.retry_after*100)/100
             title = '\U0000274c Command On Cooldown'
             reason = f'Slow down, {insult()}.\nTry again in {time} seconds.'
-            embed = discord.Embed(title=title, description=reason, color=Common_info.red)
+            embed = discord.Embed(
+                title=title,
+                description=reason,
+                color=discord.Color.red(),
+                )
             return await ctx.send(embed=embed)
         elif isinstance(error, commands.BadArgument):
             embed = Embeds.custom_error("Bad Argument", f"That isn't a number, {insult()}.")
@@ -401,8 +420,13 @@ class Moderation(commands.Cog):
             action = f'Unbanned {member.user} (ID: {member.user.id})\nBan reason: {member.reason}.'
         else:
             action = f'Unbanned {member.user} (ID: {member.user.id}).'
-        embed = discord.Embed(title='\U00002705 User was unbanned', description=action, color=Common_info.blue)
-        embed.add_field(name="Moderator:",value=reason)
+        embed = discord.Embed(
+            title='\U00002705 User was unbanned',
+            description=action,
+            color=discord.Color.blue(),
+            timestamp=Datetime.timestamp(),
+        ).add_field(name="Moderator:",value=reason)
+
         return await ctx.send(embed=embed)
 
 
@@ -438,19 +462,35 @@ class Moderation(commands.Cog):
     @commands.has_permissions(kick_members=True)
     async def kick_c(self, ctx, member: discord.Member, *, reason=None):
         bot = ctx.guild.me
+
         if member.top_role >= bot.top_role:
             embed= Embeds.custom_error("Missing Permissions",
             f"{member.mention}'s role is too high for me to kick them, {insult()}.")
             return await ctx.send(embed=embed)
+
         if member not in ctx.guild.members:
-            kick_embed = discord.Embed(title=f'\U0000274c {member} wasn\'t found. Maybe try mentioning them?', color=Common_info.red)
+            kick_embed = discord.Embed(
+                title=f'\U0000274c {member} wasn\'t found. Maybe try mentioning them?',
+                color=discord.Color.red(),
+                timestamp=Datetime.timestamp(),
+            )
             return await ctx.send(embed=kick_embed)
+
         if member.guild_permissions.ban_members == True:
-            kick_embed = discord.Embed(title=f'\U0000274c I can\'t kick mods, {insult()}', color=Common_info.red)
+            kick_embed = discord.Embed(
+                title=f'\U0000274c I can\'t kick mods, {insult()}',
+                color=discord.Color.red(),
+                timestamp=Datetime.timestamp(),
+            )
             return await ctx.send(embed=kick_embed)
+
         await member.kick(reason=reason)
         if member not in ctx.guild.members:
-            kick_embed = discord.Embed(title=f'\U00002705 {member} was kicked by {ctx.message.author}', color=Common_info.blue)
+            kick_embed = discord.Embed(
+                title=f'\U00002705 {member} was kicked by {ctx.message.author}',
+                color=discord.Color.blue(),
+                timestamp=Datetime.timestamp(),
+            )
             return await ctx.send(embed=kick_embed)
 
 
@@ -460,7 +500,7 @@ class Moderation(commands.Cog):
             time = round(error.retry_after*100)/100
             title = '\U0000274c Command On Cooldown'
             reason = f'Slow down, {insult()}.\nTry again in {time} seconds.'
-            embed = discord.Embed(title=title, description=reason, color=Common_info.red)
+            embed = discord.Embed(title=title, description=reason, color=discord.Color.red())
             return await ctx.send(embed=embed)
         elif isinstance(error, commands.BadArgument):
             embed = Embeds.custom_error("Who?",f'Try mentioning the user, {insult()}.')
