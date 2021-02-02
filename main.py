@@ -69,12 +69,12 @@ for filename in os.listdir('./cogs'):
 
 @client.event
 async def on_ready():
+    print(Datetime.get_full_date())
     print(f'Bot signed in as {client.user}')
     await client.change_presence(
         status=discord.Status.online,
         activity=discord.Game("@MakeShitFartist help")
     )
-    print(Datetime.get_full_date())
     db = Database(file)
     db.start()
     db.close()
