@@ -2,7 +2,7 @@ import os
 import json
 from discord.ext import commands
 import discord
-from definitions import Database
+from definitions import Database, Datetime
 
 file = "ifunnydiscord.sqlite"
 
@@ -74,6 +74,7 @@ async def on_ready():
         status=discord.Status.online,
         activity=discord.Game("@MakeShitFartist help")
     )
+    print(Datetime.get_full_date()))
     db = Database(file)
     db.start()
     db.close()
