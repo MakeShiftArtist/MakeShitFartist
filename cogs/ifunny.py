@@ -44,12 +44,7 @@ verified = [
 def get_ifunny(data):
     user = objects.User.by_nick(data, client=robot)
     if user is None:
-        try:
-            user = objects.User(id=data, client=robot)
-            if user.nick:
-                return user
-        except Exception:
-            return None
+        user = objects.User.by_id(data, client=robot)
     return user
 
 
@@ -325,7 +320,7 @@ class iFunny(commands.Cog):
         name="Post",
         hidden=True,
     )
-    async def post_c(self, ctx, content_url=None):
+    async def post_c(self, ctx):
         if ctx.author.id == 386839413935570954:
             poster = main_account
         elif ctx.author.id == 625719520127877136:
@@ -339,66 +334,31 @@ class iFunny(commands.Cog):
 
         links = ""
         count = 0
-        message = await ctx.send("Posting content")
+        message = await ctx.send(embed=Embeds.loading("Posting content..."))
         post = None
-
-        if content_url:
-            count+=1
-            if content_url.endswith(".mp4"):
-                type = "video_clip"
-            else:
-                type = "pic"
-            try:
-                post = poster.post_url(
-                    url=content_url,
-                    visibility='public',
-                    type=type,
-                    wait=True,
-                    timeout=60,
-                    schedule=None,
-                )
-                links += Format.hyperlink(f"Post #{count}", post.link)
-            except AttributeError:
-                links += f"Post #{count} failed to post in 60 seconds\n"
-            except Exception as e:
-                print(e)
-                await ctx.send(e)
 
         for att in ctx.message.attachments:
             if post is not None:
                 await asyncio.sleep(10)
             count+=1
-            if att.proxy_url.endswith(".mp4"):
-                type = "video_clip"
-            else:
-                type = "pic"
             try:
                 post = poster.post_url(
                     url=att.proxy_url,
-                    visibility='public',
-                    type=type,
                     wait=True,
                     timeout=60,
-                    schedule=None,
                 )
                 links += Format.hyperlink(f"Post #{count}", post.link) + "\n"
-            except AttributeError:
+            except AttributeError as e:
                 links += f"Post #{count} failed to post in 60 seconds\n"
             except Exception as e:
                 print(e)
                 await ctx.send(e)
 
-        if len(links) < 2:
-            embed = discord.Embed(
-                title="No content posted",
-                color=discord.Color.red(),
-            )
-
         embed = discord.Embed(
             title="Links",
             description=links,
             color=discord.Color.blue(),
-            timestamp=Datetime.now()
+            timestamp=Datetime.timestamp(),
         )
 
         try:
@@ -406,7 +366,6 @@ class iFunny(commands.Cog):
         except Exception as e:
             print(e)
             print(type(e))
-            print(dir(e))
             await ctx.send(embed=embed)
 
 
