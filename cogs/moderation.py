@@ -209,10 +209,10 @@ class Moderation(commands.Cog):
             description="Maybe now they'll shut the fuck up.",
             color=discord.Color.blue(),
             timestamp=Datetime.timestamp(),
-            ).add_field(
+        ).add_field(
             name="Reason",
             value = reason,
-            )
+        )
         await ctx.send(embed=embed)
 
         is_muted = self.db.get_select(f'SELECT IsMuted FROM Mutes WHERE (GuildID = "{member.guild.id}" AND MemberID = "{member.id}")')
@@ -338,10 +338,9 @@ class Moderation(commands.Cog):
     async def purge_c_error(self, ctx, error):
         if isinstance(error, commands.CommandOnCooldown):
             time = round(error.retry_after*100)/100
-            title = '\U0000274c Command On Cooldown'
             reason = f'Slow down, {insult()}.\nTry again in {time} seconds.'
             embed = discord.Embed(
-                title=title,
+                title='\U0000274c Command On Cooldown',
                 description=reason,
                 color=discord.Color.red(),
                 )
@@ -375,8 +374,10 @@ class Moderation(commands.Cog):
             return await ctx.send(embed=embed)
         bot = ctx.guild.me
         if member.top_role >= bot.top_role:
-            embed= Embeds.custom_error("Missing Permissions",
-            f"{member.mention}'s role is too high for me to ban them, {insult()}.")
+            embed = Embeds.custom_error(
+                "Missing Permissions",
+                f"{member.mention}'s role is too high for me to ban them, {insult()}."
+            )
             return await ctx.send(embed=embed)
         if reason is None:
             reason = f'Action done by {ctx.author} (ID: {ctx.author.id})'
@@ -500,7 +501,11 @@ class Moderation(commands.Cog):
             time = round(error.retry_after*100)/100
             title = '\U0000274c Command On Cooldown'
             reason = f'Slow down, {insult()}.\nTry again in {time} seconds.'
-            embed = discord.Embed(title=title, description=reason, color=discord.Color.red())
+            embed = discord.Embed(
+                title=title,
+                description=reason,
+                color=discord.Color.red(),
+            )
             return await ctx.send(embed=embed)
         elif isinstance(error, commands.BadArgument):
             embed = Embeds.custom_error("Who?",f'Try mentioning the user, {insult()}.')
