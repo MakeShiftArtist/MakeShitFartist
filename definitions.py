@@ -3,7 +3,7 @@ import random
 import asyncio
 import requests
 from random import randint
-from datetime import datetime
+from datetime import datetime, timedelta
 import sqlite3 as sqlite
 from trello import TrelloClient
 import re
@@ -201,13 +201,6 @@ class Format:
             return string
 
     @staticmethod
-    def prefix(string) -> str:
-        string = Format.discord(string)
-        string = Format.no_spaces(string)
-        string = Format.not_nothing(string)
-        return string
-
-    @staticmethod
     def trello_description(fields: list = None) -> str:
         if fields is None:
             return 'No description given'
@@ -264,13 +257,15 @@ class Embeds:
         embed = discord.Embed(
             title='IP Info',
             description=f"> ISP: {info.isp}",
-            color=Common_info.blue
-            )
+            color=discord.Color.blue(),
+            timestamp=Datetime.timestamp(),
+        )
 
         embed.add_field(name='Country', value=f"> {info.country}", inline=False)
         embed.add_field(name='State', value=f"> {info.state}", inline=False)
         embed.add_field(name='City', value=f"> {info.city}", inline=False)
         embed.add_field(name='Zipcode', value=f"> {info.zip}", inline=False)
+
         if info.mobile:
             embed.add_field(
                 name='This is likely a mobile device',
@@ -283,7 +278,7 @@ class Embeds:
                 value='> This likely isn\'t their actual IP',
                 inline=False
                 )
-        embed.set_footer(text=info.ip)
+        embed.set_footer(text=f"IP: {info.ip}")
         return embed
 
     @staticmethod
@@ -303,12 +298,12 @@ class Embeds:
         embed = discord.Embed(
             title="iMonke Trello Board",
             description=desc,
-            color=Common_info.blue)
-
-        embed.add_field(
+            color=discord.Color.blue(),
+            timestamp=Datetime.timestamp(),
+        ).add_field(
             name='Usage',
             value='`-trello <labels> [title]\n<description>`',
-            inline=False
+            inline=False,
             )
 
         example = '> -trello [frontend] [bug] Image rendering\n'
@@ -341,19 +336,22 @@ class Embeds:
 
     @staticmethod
     def loading(title="Loading..."):
-        title = f'<a:loading:774385294106689557> {title}'
-        return discord.Embed(title=title, color=Common_info.blue)
+        return discord.Embed(
+            title=f'<a:loading:774385294106689557> {title}',
+            color=discord.Color.blue(),
+            timestamp=Datetime.timestamp(),
+        )
 
     @staticmethod
     def moderation_success(ctx, user, command='Command', reason=None) -> discord.Embed:
-        title = f'\U00002705 {command} successful'
         if reason is None:
             reason = f'**Mod:** {ctx.author} (**ID:** {ctx.author.id}): No reason given'
         return discord.Embed(
-            title=title,
+            title=f'\U00002705 {command} successful',
             description=reason,
-            color=Common_info.blue
-            )
+            color=discord.Color.blue(),
+            timestamp=Datetime.timestamp(),
+        )
 
     @staticmethod
     def custom_error(title: str, suggestion: str) -> discord.Embed:
@@ -361,8 +359,9 @@ class Embeds:
         return discord.Embed(
             title=title,
             description=suggestion,
-            color=Common_info.red
-            )
+            color=discord.Color.red(),
+            timestamp=Datetime.timestamp(),
+        )
 
     @staticmethod
     def error_embed(ctx, error, commands) -> discord.Embed:
@@ -399,14 +398,17 @@ class Embeds:
         return discord.Embed(
             title='\U0000274c ' + title,
             description=reason,
-            color=Common_info.red)
+            color=discord.Color.red(),
+        )
 
     @staticmethod
     def unknown_error_embed(ctx, error) -> discord.Embed:
         embed = discord.Embed(
             title=f'\U0000274c {ctx.command} failed.',
             description='An unknown error occurred.',
-            color=Common_info.red)
+            color=discord.Color.red(),
+            timestamp=Datetime.timestamp(),
+        )
         try:
             desc = error.original
         except AttributeError:
@@ -444,11 +446,15 @@ class Embeds:
         embed = discord.Embed(
             title=f'\U0000274c {command} failed',
             description='An unknown error occurred',
-            color=Common_info.red)
+            color=discord.Color.red(),
+            timestamp=Datetime.timestamp(),
+        )
+
         embed.add_field(name='Where:', value=location_data, inline=False)
         embed.add_field(name='Type:', value=type(error), inline=False)
         embed.add_field(name='Full Error:', value=str(error), inline=False)
         embed.add_field(name="Time:", value=time, inline=False)
+
         return embed
 
     @staticmethod
@@ -468,14 +474,10 @@ class Embeds:
         embed = discord.Embed(
             title=member.display_name,
             description=full_name,
-            color=Common_info.blue
-            )
+            color=discord.Color.blue(),
+            timestamp=Datetime.timestamp(),
+        ).add_field(name='Created on', value=registered_date, inline=False)
 
-        embed.add_field(
-            name='Created on',
-            value=registered_date,
-            inline=False
-            )
         try:
             join_date = Datetime.get_full_date(member.joined_at)
             embed.add_field(
@@ -563,6 +565,10 @@ class Datetime:
         return datetime.now()
 
     @staticmethod
+    def timestamp():
+        return datetime.now() + timedelta(hours=6)
+
+    @staticmethod
     def _time_common(time=None):
         if time is None:
             time = datetime.now()
@@ -574,7 +580,7 @@ class Datetime:
             time = datetime.now()
         start = time.strftime('%A, %B')
         day = Numbers.ordinal(int(time.strftime('%d')))
-        end = time.strftime('%Y %H:%M %p')
+        end = time.strftime('%Y %I:%M %p').lstrip("0").replace(" 0", " ")
         return f"{start} {day}, {end}"
 
 
@@ -687,36 +693,30 @@ class iFunnyEmbeds:
             user.days, nextdays, user.feature_count,
             user.post_count, user.smiles_count,
             user.subscriber_count, user.subscription_count
-            )
+        )
+        post_stats = f'> `{stats[3]}` Posts\n> `{stats[4]}` Smiles {smilemoji}'
 
         ifunnyembed = discord.Embed(
             title=username,
             description=user.about,
-            color=Common_info.blue
-            )
-
-        ifunnyembed.add_field(
+            color=discord.Color.blue(),
+            timestamp=Datetime.timestamp(),
+        ).add_field(
             name=user.rank,
             value=f'> `{stats[0]}` Days\n> `{stats[1]}` Next',
             inline=False
-            )
-
-        post_stats = f'> `{stats[3]}` Posts\n> `{stats[4]}` Smiles {smilemoji}'
-        ifunnyembed.add_field(
+        ).add_field(
             name='Posts',
             value=f'> `{stats[2]}` Features {featemoji}\n{post_stats}',
             inline=True
-            )
-
-        ifunnyembed.add_field(
+        ).add_field(
             name='Sub Stats',
             value=f'> `{stats[5]}` Subs\n> `{stats[6]}` Subbed'
-            )
-        ifunnyembed.add_field(
+        ).add_field(
             name='Profile',
             value=f'[Visit](https://ifunny.co/user/{user.nick})',
             inline=False
-            )
+        )
 
         if (user.profile_image):
             ifunnyembed.set_thumbnail(url=user.profile_image.url)
@@ -739,20 +739,20 @@ class iFunnyEmbeds:
     def iFunnySubEmbed(user, robot):
         if user.is_subscription:
             subbedto = 'Unsubscribed to {}'.format(user.nick)
-            embed = discord.Embed(
+            return discord.Embed(
                 title=subbedto,
                 description='Use `-sub` to sub',
-                color=Common_info.blue
-                )
-            embed.set_footer(text=robot.nick)
-            return embed
+                color=discord.Color.blue(),
+                timestamp=Datetime.timestamp(),
+            ).set_footer(text=robot.nick)
         else:
             subbedto = 'Subscribed to {}'.format(user.nick)
             embed = discord.Embed(
                 title=subbedto,
                 description='Use `-sub` to unsub',
-                color=Common_info.blue)
-            embed.set_footer(text=robot.nick)
+                color=discord.Color.blue(),
+                timestamp=Datetime.timestamp(),
+            ).set_footer(text=robot.nick)
             return embed
 
 
@@ -907,42 +907,109 @@ class Insults:
         else:
             raise json["error_message"]
 
-class PokemonHelper:
+class Pokedex:
     def __init__(self):
         self.kalos = "https://www.pokemon.com/uk/api/pokedex/kalos"
 
-    def all_pokemon(self, name:str = None):
+    def pokemon(self, pokemon):
+        class Pokemon:
+            def __init__(self, pokemon):
+                self.name = pokemon.get("name")
+                self.image = pokemon.get("ThumbnailImage")
+                self.id = pokemon.get("number")
+                self.types = pokemon.get("type")
+                self.weakness = pokemon.get("weakness")
+                self.height = pokemon.get("height")
+                self.weight = pokemon.get("weight")
+                self.ability = pokemon.get("abilities")
+
+            def __str__(self):
+                return self.name
+
+            def __repr__(self):
+                return f"Pokemon Object\n\tName: {self.name}\n\tPokedex ID: {self.id}"
+
+            def __int__(self):
+                return self.id
+
+            def __eq__(self, pokemon):
+                try:
+                    return self.id == pokemon.id
+                except AttributeError:
+                    return False
+
+            def __ne__(self, pokemon):
+                try:
+                    return self.id != pokemon.id
+                except AttributeError:
+                    return False
+
+
+        return Pokemon(pokemon)
+
+    def all_pokemon(self):
         res = []
         added = []
-        if name is None:
-            pokes = requests.get(self.kalos)
-            json = pokes.json()
-            for obj in json:
-                poke = {
-                    "name": obj["name"],
-                    "image": obj["ThumbnailImage"],
-                    "id": obj["number"]
-                }
-                res.append(poke)
-            return res
-        else:
-            name = str(name)
-            check_for = name.split()
-            pokes = requests.get(self.kalos)
-            json = pokes.json()
-            for obj in json:
-                all_in = False
-                for letters in check_for:
-                    if letters.lower() not in obj["name"].lower() or \
-                        obj["number"] in added:
-                        break
-                else:
-                    poke = {
-                        "name": obj["name"],
-                        "image": obj["ThumbnailImage"],
-                        "id": obj["number"]
-                    }
-                    res.append(poke)
-                    added.append(obj["number"])
-
+        pokes = requests.get(self.kalos).json()
+        for poke in pokes:
+            pokemon = {
+                "name": poke.get("name"),
+                "image": poke.get("ThumbnailImage"),
+                "id": poke.get("number")
+            }
+            res.append(self.pokemon(poke))
         return res
+
+    def checkfor_inside(self, check_for:str, inside:str) -> bool:
+        # makes a list based on white spaces
+        check_for = check_for.split()
+        inside = inside.lower()
+        previous = 0
+        new = -1
+        temp = -2
+
+        for check in check_for:
+            if check.lower() not in inside:
+                return False
+            else:
+                new = inside.index(check)
+                if new < previous:
+                    return False
+                previous = new
+                # replaces the first occurance of the check in the string
+                inside = inside.replace(check, " ", 1)
+        else:
+            # Else occurs if the for loop doesn't break
+            return True
+
+    def pokemon_by_name(self, name:str):
+        pokes = requests.get(self.kalos).json()
+        result = []
+        added = []
+        for poke in pokes:
+            if self.checkfor_inside(name, poke["name"]) and \
+                poke["number"] not in added:
+                result.append(self.pokemon(poke))
+                added.append(poke["number"])
+        return result
+
+    def pokemon_by_id(self, id:int):
+        pokes = requests.get(self.kalos).json()
+        result = []
+        added = []
+        try:
+            id = int(id)
+        except ValueError:
+            return []
+        id = f"{id:03d}"
+        for poke in pokes:
+            if id == poke.get("number", 0):
+                return [self.pokemon(poke)]
+        else:
+            return []
+
+    def find_pokemon(self, argument):
+        pokes = self.pokemon_by_id(argument)
+        if not pokes:
+            pokes = self.pokemon_by_name(argument)
+        return pokes
