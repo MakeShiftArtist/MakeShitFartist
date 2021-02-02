@@ -61,7 +61,7 @@ class Misc(commands.Cog):
             return
         info = {
             "message": message,
-            "time": Datetime.get_full_date()
+            "time": Datetime.timestamp(),
         }
         self.deletes[message.guild.id] = info
 
@@ -84,7 +84,7 @@ class Misc(commands.Cog):
             "before": before,
             "extra": None,
             "after": after,
-            "time": Datetime.get_full_date()
+            "time": Datetime.timestamp(),
         }
         self.edits[before.guild.id] = info
 
@@ -103,12 +103,11 @@ class Misc(commands.Cog):
             return await ctx.send("Nothing to snipe!")
         embed = discord.Embed(
             description=message.content,
-            color=Common_info.blue,
+            color=discord.Color.blue(),
+            timestamp=info["time"],
         ).set_author(
             name=message.author,
             icon_url=message.author.avatar_url
-        ).set_footer(
-            text=info["time"]
         )
         for pic in message.attachments:
             link = pic.proxy_url
@@ -137,12 +136,11 @@ class Misc(commands.Cog):
         embed = discord.Embed(
             title="Original",
             description=og.content,
-            color=Common_info.blue,
+            color=discord.Color.blue(),
+            timestamp=info["time"],
         ).set_author(
             name=og.author,
             icon_url=og.author.avatar_url
-        ).set_footer(
-            text=info["time"]
         ).add_field(
             name="New",
             value=info["after"].content[:1023],
@@ -225,11 +223,11 @@ class Misc(commands.Cog):
         trello_desc = f"**Reporter:** `{ctx.author}`\n{temp_desc}\n\n"
         trello_desc += Format.hyperlink("Message embed", message.jump_url)
         card = base.add_bug(fields[0] , trello_desc, bug_info.labels)
-        time = Datetime.get_full_date()
         embed = discord.Embed(
             title='Trello report added to `REPORTS`',
             description=f"[The report]({card.short_url})",
-            color=Common_info.blue,
+            color=discord.Color.blue(),
+            timestamp=Datetime.timestamp(),
             ).add_field(
                 name='Title',
                 value=bug_info.title,
@@ -244,8 +242,11 @@ class Misc(commands.Cog):
             embed.add_field(name='Tags/Labels', value=labels, inline=False)
 
         discord_desc = f"**Reporter:** {ctx.author.mention}\n{temp_desc}"
-        embed.add_field(name='Description', value=discord_desc, inline=False)
-        embed.set_footer(text=time)
+        embed.add_field(
+            name='Description',
+            value=discord_desc,
+            inline=False
+            )
         try:
             return await message.edit(embed=embed)
         except:
@@ -291,7 +292,7 @@ class Misc(commands.Cog):
 
             embed = discord.Embed(
                 title = re.sub(POINT_COUNT_REGEX, "", card.name),
-                color = Common_info.blue,
+                color = discord.Color.blue(),
             )
             if label_names:
                 embed.add_field(
@@ -320,7 +321,11 @@ class Misc(commands.Cog):
             time = round(error.retry_after*100)/100
             title = '\U0000274c Command On Cooldown'
             reason = f'Slow down, {insult()}.\nTry again in {time} seconds.'
-            embed = discord.Embed(title=title, description=reason, color=Common_info.red)
+            embed = discord.Embed(
+                title=title,
+                description=reason,
+                color=discord.Color.red(),
+                )
             return await ctx.send(embed=embed)
         if isinstance(error, commands.NoPrivateMessage):
             return await ctx.send("You must be in iMonke to use this command.")
@@ -336,7 +341,7 @@ class Misc(commands.Cog):
     @commands.command(name='Ping',brief='Checks bot latency', usage='Ping',
     help="Checks the bot's latency to the server in milliseconds")
     async def ping_c(self, ctx):
-        ping_embed = discord.Embed(title = f'Pong! {round(self.bot.latency * 1000)}ms', color=Common_info.blue)
+        ping_embed = discord.Embed(title = f'Pong! {round(self.bot.latency * 1000)}ms', color=discord.Color.blue())
         await ctx.send(embed=ping_embed)
 
 
@@ -352,7 +357,7 @@ class Misc(commands.Cog):
         embed = discord.Embed(
             title='Invite links',
             description=f"[My bot's page](https://top.gg/bot/723105765812076664)",
-            color=Common_info.blue,
+            color=discord.Color.blue(),
             ).add_field(
             name='Bot invite',
             value=f'[Invite the bot]({bot_link})',
@@ -411,6 +416,8 @@ class Misc(commands.Cog):
         if len(prefix) > 15:
             return await ctx.send(
                 "That prefix is too long. Why the fuck would you want the prefix to be that long?")
+        if "@everyone" in prefix or "@here" in prefix:
+            return await ctx.send("Prefix can't have a default mention in it")
         guildid = ctx.message.guild.id
         db = Database(file)
         cursor = db.cursor
@@ -459,7 +466,7 @@ class Misc(commands.Cog):
             member = ctx.message.author
         embed = discord.Embed(
             title="Avatar",
-            color=Common_info.blue
+            color=discord.Color.blue()
             )
         embed.set_author(
             name=member.display_name,
@@ -501,12 +508,13 @@ class Misc(commands.Cog):
             embed = discord.Embed(
                 title=title,
                 description=extra[0],
-                color=Common_info.blue
+                color=discord.Color.blue(),
+                timestamp=Datetime.timestamp()
                 )
         except Exception:
             embed = discord.Embed(
                 title=title,
-                color=Common_info.blue
+                color=discord.Color.blue()
                 )
         for field in extra[1:]:
             data = re.split(r"((?<!\\)(\s\|\s|\s\||\|\s|\|))", field)
