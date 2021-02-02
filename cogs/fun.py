@@ -3,7 +3,6 @@ import discord
 import asyncio
 from discord.ext import commands
 from definitions import *
-from ifunny import objects
 import random
 import praw
 import re
@@ -13,7 +12,7 @@ class Fun(commands.Cog):
     '''Commands to add some fun to your server'''
     def __init__(self, bot):
         self.tictac = games.TicTacToe()
-        self.pokemon = PokemonHelper()
+        self.pokemon = Pokedex()
         self.bot = bot
         self.insult = Insults()
         self.names = {
@@ -236,7 +235,8 @@ class Fun(commands.Cog):
             eightballembed = discord.Embed(
                 title='Question:',
                 description= f'{Format.discord(question)}?',
-                colour=discord.Colour.blue()
+                colour=discord.Colour.blue(),
+                timestamp=Datetime.timestamp(),
                 )
             eightballembed.add_field(name='🎱Answer:🎱', value=f'{yesorno()}')
             return await ctx.send(embed=eightballembed)
@@ -254,7 +254,12 @@ class Fun(commands.Cog):
             link = 'https://www.youtube.com/results?search_query='
             link += Format.youtube(searchtext)
             shortened = f'[Search Link]({link})'
-            youtubeembed = discord.Embed(title='Youtube',description = shortened,color = discord.Colour.red())
+            youtubeembed = discord.Embed(
+                title='Youtube',
+                description = shortened,
+                color = discord.Colour.red(),
+                timestamp=Datetime.timestamp(),
+                )
             return await ctx.send(embed=youtubeembed)
         return await ctx.send("What the fuck do you wan't me to search?")
 
@@ -281,7 +286,12 @@ class Fun(commands.Cog):
 
         insult = insult.replace("%3C", "<")
         insult = insult.replace("%3E", ">")
-        embed = discord.Embed(title="Insult:", description=insult, color = Common_info.blue)
+        embed = discord.Embed(
+            title="Insult:",
+            description=insult,
+            color=discord.Color.blue(),
+            timestamp=Datetime.timestamp(),
+            )
         embed.set_footer(text=ctx.author)
         return await ctx.send(embed=embed)
 
@@ -302,33 +312,33 @@ class Fun(commands.Cog):
             return await ctx.send(
                 f"{ctx.prefix}{ctx.invoked_with} letters here\nSeparate keys with a space")
         else:
-            pokes = self.pokemon.all_pokemon(keys)
-            if len(pokes) == 0:
+            pokes = self.pokemon.find_pokemon(keys)
+            if not pokes:
                 return await ctx.send("No pokemon found")
             if len(pokes) == 1:
                 poke = pokes[0]
                 embed = discord.Embed(
-                    title=poke["name"],
-                    color=Common_info.blue,
+                    title=poke.name,
+                    color=discord.Color.blue(),
+                    timestamp=Datetime.timestamp(),
                 ).set_footer(
-                    text=f"Pokedex ID: {poke['id']}"
-                ).set_image(url=poke["image"])
+                    text=f"Pokedex ID: {poke.id}"
+                ).set_image(url=poke.image)
                 return await ctx.send(embed=embed)
             else:
                 desc = ""
                 count = 0
                 for poke in pokes:
-                    desc += f"**{poke['name']}** | Dex: `{poke['id']}`\n"
+                    desc += f"**{poke.name}** | Dex: `{poke.id}`\n"
                     count +=1
                     if count == 20:
                         break
                 embed = discord.Embed(
                     title=f"Pokemon found",
                     description=desc,
-                    color=Common_info.blue,
-                ).set_footer(
-                    text=f"Pokemon found: {len(pokes)}",
-                )
+                    color=discord.Color.blue(),
+                    timestamp=Datetime.timestamp(),
+                ).set_footer(text=f"Pokemon found: {len(pokes)}")
                 return await ctx.send(embed=embed)
 
 
