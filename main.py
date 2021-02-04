@@ -100,6 +100,8 @@ async def on_command_error(ctx, error):
         return
     elif isinstance(error, discord.Forbidden):
         return
+    elif isinstance(error, discord.errors.Forbidden):
+        return
     elif isinstance(error, commands.BadArgument):
         return await ctx.send(error)
     elif isinstance(error, commands.MissingRequiredArgument):
