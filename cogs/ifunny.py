@@ -344,12 +344,11 @@ class iFunny(commands.Cog):
             try:
                 post = poster.post_url(
                     url=att.proxy_url,
-                    wait=True,
-                    timeout=60,
+                    wait=False,
                 )
                 links += Format.hyperlink(f"Post #{count}", post.link) + "\n"
             except AttributeError as e:
-                links += f"Post #{count} failed to post in 60 seconds\n"
+                links += f"Post #{count}\n"
             except Exception as e:
                 print(e)
                 await ctx.send(e)
