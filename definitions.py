@@ -700,6 +700,7 @@ class iFunnyEmbeds:
             description=user.about,
             color=discord.Color.blue(),
             timestamp=Datetime.timestamp(),
+            url=f"https://ifunny.co/user/{user.nick}",
         ).add_field(
             name=user.rank,
             value=f'> `{stats[0]}` Days\n> `{stats[1]}` Next',
@@ -711,18 +712,14 @@ class iFunnyEmbeds:
         ).add_field(
             name='Sub Stats',
             value=f'> `{stats[5]}` Subs\n> `{stats[6]}` Subbed'
-        ).add_field(
-            name='Profile',
-            value=f'[Visit](https://ifunny.co/user/{user.nick})',
-            inline=False
         )
 
         if (user.profile_image):
-            ifunnyembed.set_thumbnail(url=user.profile_image.url)
+            pfp = user.profile_image.url
         else:
-            url = 'https://cdn.discordapp.com/attachments/76827135814834588'
-            ifunnyembed.set_thumbnail(
-                url=f'{url}/779123930672922644/1605828002100.png')
+            pfp = 'https://cdn.discordapp.com/attachments/76827135814834588'
+            pfp = f'{url}/779123930672922644/1605828002100.png'
+        ifunnyembed.set_thumbnail(url=pfp)
 
         if (user.cover_image):
             ifunnyembed.set_image(url=user.cover_image.url)
