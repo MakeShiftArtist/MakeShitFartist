@@ -320,7 +320,7 @@ class iFunny(commands.Cog):
         name="Post",
         hidden=True,
     )
-    async def post_c(self, ctx):
+    async def post_c(self, ctx, content_url=None):
         if ctx.author.id == 386839413935570954:
             poster = main_account
         elif ctx.author.id == 625719520127877136:
@@ -337,6 +337,16 @@ class iFunny(commands.Cog):
         message = await ctx.send(embed=Embeds.loading("Posting content..."))
         post = None
 
+        if content_url:
+            try:
+                post = poster.post_url(
+                    url=content_url,
+                    wait=False,
+                )
+                count += 1
+                links += f"Post #{count}\n"
+            except Exception:
+                links += "Not a valid url\n"
         for att in ctx.message.attachments:
             if post is not None:
                 await asyncio.sleep(10)
@@ -347,7 +357,7 @@ class iFunny(commands.Cog):
                     wait=False,
                 )
                 links += Format.hyperlink(f"Post #{count}", post.link) + "\n"
-            except AttributeError as e:
+            except AttributeError:
                 links += f"Post #{count}\n"
             except Exception as e:
                 print(e)
