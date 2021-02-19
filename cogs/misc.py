@@ -8,23 +8,6 @@ from definitions import *
 import re
 
 file = "ifunnydiscord.sqlite"
-IMONKE_GUILD_ID = 646164479863947266
-POINT_COUNT_REGEX = "^((\[|\()\d+(\]|\))(\ +)?)+"
-TRELLO_DESC = """
-Sends a report to [iMonke's Trello board](https://trello.com/b/6VnXOnCr/)
-> Use `-trello` for a list of labels and more info
-> You must be in iMonke to use this command.
-"""
-
-with open("tokens.json") as f:
-    data = json.load(f)
-    trello_client = Trello.Info.client(
-        data["trello"]["api_key"],
-        data["trello"]["api_secret"],
-        data["trello"]["token"]
-        )
-
-base = Trello.Base(trello_client, "iMonke Development", "REPORTS")
 
 
 class Misc(commands.Cog):
@@ -56,9 +39,17 @@ class Misc(commands.Cog):
     async def on_message_delete(self, message):
         if message.author.id == self.bot.user.id:
             return
-        if (not message.content and \
-            not message.attachments):
+
+        atts = True
+        for att in message.attachments:
+            if re.match(r"\S.gif$|\S.jpg$|\S.png$", att.proxy_url):
+                break
+        else:
+            atts = False
+
+        if (not message.content and not atts):
             return
+
         info = {
             "message": message,
             "time": Datetime.timestamp(),
@@ -113,9 +104,7 @@ class Misc(commands.Cog):
             link = pic.proxy_url
             if not link:
                 link = pic.url
-            if link.endswith(".jpg") or \
-                link.endswith(".png") or \
-                link.endswith(".gif"):
+            if re.match(r"\S.gif$|\S.jpg$|\S.png$", link):
                 embed.set_image(url=link)
             break
         return await ctx.send(embed=embed)
@@ -156,42 +145,51 @@ class Misc(commands.Cog):
             link = pic.proxy_url
             if not link:
                 link = pic.url
-            if link.endswith(".jpg") or \
-                link.endswith(".png") or \
-                link.endswith(".gif"):
+            if re.match(r"\S.gif$|\S.jpg$|\S.png$", link):
                 embed.set_image(url=link)
             break
         return await ctx.send(embed=embed)
 
-    @commands.command(hidden=True, name='IP')
-    @commands.is_owner()
-    async def ip_info_c(self, ctx, ip_address:str=None):
+    @commands.command(
+        name='IP',
+        brief="Sends info about an IP address",
+        help="Sends an embed with all pubic info from an ip address",
+        usage="ip [ip address]"
+        )
+    @commands.cooldown(2,10.0,type=commands.BucketType.member)
+    async def ip_info(self, ctx, ip_address:str=None):
         if ip_address is None:
             return await ctx.send("You need to supply an IP address")
         embed = Embeds.loading()
         message = await ctx.send(embed=embed)
-        api = IPInfo(ip_address)
-        success = api.is_success()
-        if success:
-            info = api.ip_info()
+        ip = IPInfo(ip_address)
+        if ip.is_success():
+            info = ip.ip_info()
         else:
-            info = api.error()
+            info = ip.error()
 
-        if success:
+        if ip.is_success():
             embed = Embeds.ip_embed(info)
         else:
             embed = Embeds.custom_error('IP info failed', info.message)
-        return await message.edit(embed=embed)
+        try:
+            return await message.edit(embed=embed)
+        except Exception:
+            return await ctx.send(message.edit)
 
-    @ip_info_c.error
-    async def ip_info_c_error(self, ctx, error):
+    @ip_info.error
+    async def ip_info_error(self, ctx, error):
         if isinstance(error, commands.NotOwner):
             return
         return await ctx.send(error)
 
 
-    @commands.command(name='Ping',brief='Checks bot latency', usage='Ping',
-    help="Checks the bot's latency to the server in milliseconds")
+    @commands.command(
+        name='Ping',
+        brief='Checks bot latency',
+        usage='Ping',
+        help="Checks the bot's latency to the server in milliseconds",
+    )
     async def ping_c(self, ctx):
         ping_embed = discord.Embed(
             title = f'Go fuck yourself! {round(self.bot.latency * 1000)}ms',
