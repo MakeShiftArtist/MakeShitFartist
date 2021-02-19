@@ -28,6 +28,8 @@ class Fun(commands.Cog):
             "nabb-e": "nabbit",
             "shift": "makeshiftartist",
             "makeshift": "makeshiftartist",
+            "d'arby": "darby",
+            "kratos": "darby",
         }
         self.friends = {
             "defy": {
@@ -80,6 +82,11 @@ class Fun(commands.Cog):
                 "reacts": [u"\U0001f608"],
                 "id": 386839413935570954,
             },
+            "darby": {
+                "message": "Do that again and fuck you \U0001f924\U0001f609",
+                "reacts": [],
+                "id": 670135524396367872,
+            },
         }
 
     @commands.Cog.listener()
@@ -95,7 +102,7 @@ class Fun(commands.Cog):
             "child", "creature", "cweature", "kierkegaard",
             "macey", "wife-e", "meika", "meika_",
             "nabbit", "nabb-e", "shift", "makeshift",
-            "makeshiftartist",
+            "makeshiftartist", "darby", "d'arby", "kratos",
             ]
         )
     @commands.bot_has_permissions(manage_webhooks=True)
