@@ -83,7 +83,7 @@ class Fun(commands.Cog):
                 "id": 386839413935570954,
             },
             "darby": {
-                "message": "Do that again and fuck you \U0001f924\U0001f609",
+                "message": "Do that again and I'll fuck you \U0001f924\U0001f609",
                 "reacts": [],
                 "id": 670135524396367872,
             },
