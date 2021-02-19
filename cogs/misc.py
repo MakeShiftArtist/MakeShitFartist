@@ -60,7 +60,8 @@ class Misc(commands.Cog):
     async def on_message_edit(self, before, after):
         if before.author.id == self.bot.user.id:
             return
-        if not before.content:
+        if (not before.content and not after.content) or \
+            before.content == after.content:
             return
         try:
             current_guild = self.edits[before.guild.id]
