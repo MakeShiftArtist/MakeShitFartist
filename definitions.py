@@ -5,109 +5,12 @@ import requests
 from random import randint
 from datetime import datetime, timedelta
 import sqlite3 as sqlite
-from trello import TrelloClient
 import re
 
 
 class Common_info:
     blue = 0x1E90FF
     red = 0xFF0000
-
-
-class Trello:
-    """Functions for trello"""
-    class Info:
-        def client(api_key, api_secret, token):
-            return TrelloClient(
-                api_key=api_key,
-                api_secret=api_secret,
-                token=token
-            )
-
-        def get_board(client, board_name):
-            boards = client.list_boards()
-            for board in boards:
-                if board.name == board_name:
-                    return board
-            else:
-                return None
-
-        def get_list(board, list_name):
-            lists = board.list_lists()
-            for list in lists:
-                if list.name == list_name:
-                    return list
-            else:
-                return None
-
-        def get_labels(board):
-            labels = []
-            for label in board.get_labels():
-                if label is not None and label.color is not None:
-                    labels.append(label)
-            return labels
-
-        def labels_with_names(base, labels_list):
-            labels = []
-            if labels_list == []:
-                return []
-            active_labels = Trello.Info.get_labels(base.board)
-            for label in labels_list:
-                for active_label in active_labels:
-                    if active_label.color is None:
-                        continue
-                    elif active_label.name.lower() == label.lower():
-                        labels.append(active_label)
-
-            return list(set(labels))
-
-    class Card_labels:
-        def __init__(self, message=None):
-            if message is None:
-                message = "No title"
-            label_pattern = "(?<=\[)\w+(?=\])"
-            strip_pattern = "(\ )?\[\w+\](\ )?"
-            labels = re.findall(label_pattern, message)
-            if labels == []:
-                labels = ['report']
-            else:
-                labels.append('report')
-
-            self.labels = labels
-            self.title = re.sub(strip_pattern, "", message)
-
-    class Base:
-        def __init__(self, client, board_name, list_name):
-            self.client = client
-            self.board = Trello.Info.get_board(client, board_name)
-            self.list = Trello.Info.get_list(self.board, list_name)
-            self.all_cards = self.list.list_cards()
-            self.labels = Trello.Info.get_labels(self.board)
-
-        def get_boards(self):
-            return self.client.list_boards()
-
-        def get_lists(self):
-            return self.board.list_lists()
-
-        def get_bugs(self):
-            self.all_bugs = self.list.list_cards()
-            return self.all_bugs
-
-        def add_bug(self, message=None, desc=None, labels=[]):
-            message = Trello.Card_labels(message)
-            desc = desc if desc else 'No description'
-
-            if labels is None:
-                labels = ['report']
-            card_labels = Trello.Info.labels_with_names(self, labels)
-
-            card = self.list.add_card(
-                message.title, desc, position='top', labels=card_labels
-            )
-            self.all_cards = self.list.list_cards()
-            return card
-
 
 """
 Random functions
@@ -201,15 +104,6 @@ class Format:
             return string
 
     @staticmethod
-    def trello_description(fields: list = None) -> str:
-        if fields is None:
-            return 'No description given'
-        if len(fields) >= 2:
-            return '\n'.join(fields[1:])
-        elif len(fields) == 1:
-            return 'No description given'
-
-    @staticmethod
     def discord(string) -> str:
         string = str(string)
         doublespace = '  '
@@ -281,58 +175,6 @@ class Embeds:
         embed.set_footer(text=f"IP: {info.ip}")
         return embed
 
-    @staticmethod
-    def trello_embed(base):
-        all_labels = Trello.Info.get_labels(base.board)
-        valid_labels = ''
-        for item in all_labels:
-            if item == all_labels[-1]:
-                valid_labels += f"`[{item.name}]`"
-            else:
-                valid_labels += f"`[{item.name}]` | "
-
-        link = 'https://trello.com/b/6VnXOnCr/imonke-development'
-        desc = f'> You can find the board [here]{link}). '
-        desc += 'You must be in iMonke to use this command. '
-        desc += 'Spamming or abusing this will get you blacklisted.'
-        embed = discord.Embed(
-            title="iMonke Trello Board",
-            description=desc,
-            color=discord.Color.blue(),
-            timestamp=Datetime.timestamp(),
-        ).add_field(
-            name='Usage',
-            value='`-trello <labels> [title]\n<description>`',
-            inline=False,
-            )
-
-        example = '> -trello [frontend] [bug] Image rendering\n'
-        example += '> When feed scrolling, sometimes images will not render.'
-        embed.add_field(
-            name='Example',
-            value=example,
-            inline=False)
-
-        usage = "> The brackets `[]` around the labels are required."
-        usage += '\n> `<label>` WILL NOT WORK! It must be `[label]`'
-        embed.add_field(
-            name='Label Tips',
-            value=usage,
-            inline=False
-            )
-
-        embed.add_field(
-            name='Valid Labels',
-            value=valid_labels,
-            inline=False
-            )
-
-        embed.add_field(
-            name='How to add a description',
-            value='To add a description, create a new line',
-            inline=False
-            )
-        return embed
 
     @staticmethod
     def loading(title="Loading..."):
